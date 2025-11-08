@@ -1,0 +1,42 @@
+services:
+  api-ralvarez-dev:
+    build:
+      context: ./api.ralvarez.dev
+    hostname: api-ralvarez-dev
+    ports:
+      - "9000:8080"
+      
+  internal-mailer:
+    build:
+      context: ./internal-mailer
+      secrets:
+        - GITHUB_TOKEN
+    hostname: internal-mailer
+    ports:
+      - "9101:50051"
+    environment:
+      MODE: ${INTERNAL_MAILER_MODE}
+      MAILERSEND_DOMAIN: ${INTERNAL_MAILER_MAILERSEND_DOMAIN}
+      MAILERSEND_NAME: ${INTERNAL_MAILER_MAILERSEND_NAME}
+      MAILERSEND_API_KEY: ${INTERNAL_MAILER_MAILERSEND_API_KEY}
+      MAILERSEND_SENDER_NAME: ${INTERNAL_MAILER_MAILERSEND_SENDER_NAME}
+      RESEND_DOMAIN: ${INTERNAL_MAILER_RESEND_DOMAIN}
+      RESEND_NAME: ${INTERNAL_MAILER_RESEND_NAME}
+      RESEND_API_KEY: ${INTERNAL_MAILER_RESEND_API_KEY}
+      RESEND_SENDER_NAME: ${INTERNAL_MAILER_RESEND_SENDER_NAME}
+      MAILER: ${INTERNAL_MAILER_MAILER}
+    restart: on-failure
+    networks:
+      - app-network
+
+secrets:
+  GITHUB_TOKEN:
+    file: ./.github_token
+
+volumes:
+  postgres-data:
+  redis-data:
+    
+networks:
+  app-network:
+    driver: bridge
