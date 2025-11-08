@@ -29,11 +29,32 @@ services:
     networks:
       - app-network
 
+  mongodb:
+      image: mongo:latest
+      container_name: mongodb
+      ports:
+        - "27017:27017"
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+        MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+        INTERNAL_FILE_STORAGE_MONGODB_DB: ${INTERNAL_FILE_STORAGE_MONGODB_DB}
+        INTERNAL_FILE_STORAGE_MONGODB_USERNAME: ${INTERNAL_FILE_STORAGE_MONGODB_USERNAME}
+        INTERNAL_FILE_STORAGE_MONGODB_PASSWORD: ${INTERNAL_FILE_STORAGE_MONGODB_PASSWORD}
+        MOVIES_MONGODB_DB: ${MOVIES_MONGODB_DB}
+        MOVIES_MONGODB_USERNAME: ${MOVIES_MONGODB_USERNAME}
+        MOVIES_MONGODB_PASSWORD: ${MOVIES_MONGODB_PASSWORD}
+      volumes:
+        - ./mongodb/initdb.d:/docker-entrypoint-initdb.d
+        - mongo-data:/data/db
+      networks:
+        - app-network
+
 secrets:
   GITHUB_TOKEN:
     file: ./.github_token
 
 volumes:
+  mongo-data:
   postgres-data:
   redis-data:
     
