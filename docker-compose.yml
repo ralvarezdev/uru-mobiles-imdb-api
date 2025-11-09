@@ -4,7 +4,7 @@ services:
       context: ./api.ralvarez.dev
     hostname: api-ralvarez-dev
     ports:
-      - "9000:8080"
+      - "9000:80"
       
   internal-mailer:
     build:
@@ -32,11 +32,9 @@ services:
   postgres:
     image: postgres:latest
     hostname: postgres
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
-      - ./postgres/initdb.d:/docker-entrypoint-initdb.d
+      - ./postgres/initdb.d:/docker-entrypoint-initdb.d:ro
     environment:
       POSTGRES_USER: ${POSTGRES_SUPERUSER_NAME}
       POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
@@ -57,8 +55,6 @@ services:
   mongodb:
       image: mongo:latest
       container_name: mongodb
-      ports:
-        - "27017:27017"
       environment:
         MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
         MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
@@ -69,19 +65,115 @@ services:
         MOVIES_MONGODB_USERNAME: ${MOVIES_MONGODB_USERNAME}
         MOVIES_MONGODB_PASSWORD: ${MOVIES_MONGODB_PASSWORD}
       volumes:
-        - ./mongodb/initdb.d:/docker-entrypoint-initdb.d
         - mongo-data:/data/db
+        - ./mongodb/initdb.d:/docker-entrypoint-initdb.d:ro
       networks:
         - app-network
+
+  redis:
+    image: redis:latest
+    hostname: redis
+    volumes:
+      - redis-data:/data
+      - ./redis/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+      - ./redis/initdb.d:/docker-entrypoint-initdb.d:ro
+    environment:
+      REDIS_AUTH_USER: ${REDIS_AUTH_USER}
+      REDIS_AUTH_PASSWORD: ${REDIS_AUTH_PASSWORD}
+      REDIS_AUTH_DB: ${REDIS_AUTH_DB}
+      REDIS_USER_USER: ${REDIS_USER_USER}
+      REDIS_USER_PASSWORD: ${REDIS_USER_PASSWORD}
+      REDIS_USER_DB: ${REDIS_USER_DB}
+      REDIS_MOVIES_USER: ${REDIS_MOVIES_USER}
+      REDIS_MOVIES_PASSWORD: ${REDIS_MOVIES_PASSWORD}
+      REDIS_MOVIES_DB: ${REDIS_MOVIES_DB}
+    command: [ "redis-server", "--requirepass", "${REDIS_DEFAULT_PASSWORD}" , "--aclfile", "/data/users.acl"]
+    entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    ports:
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./rabbitmq/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+      - ./rabbitmq/initdb.d:/docker-entrypoint-initdb.d:ro
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
+      RABBITMQ_AUTH_USER: ${RABBITMQ_AUTH_USER}
+      RABBITMQ_AUTH_PASSWORD: ${RABBITMQ_AUTH_PASSWORD}
+      RABBITMQ_USER_USER: ${RABBITMQ_USER_USER}
+      RABBITMQ_USER_PASSWORD: ${RABBITMQ_USER_PASSWORD}
+      RABBITMQ_MOVIES_USER: ${RABBITMQ_MOVIES_USER}
+      RABBITMQ_MOVIES_PASSWORD: ${RABBITMQ_MOVIES_PASSWORD}
+      RABBITMQ_TOKEN_EXCHANGE_NAME: ${RABBITMQ_TOKEN_EXCHANGE_NAME}
+      RABBITMQ_USER_EXCHANGE_NAME: ${RABBITMQ_USER_EXCHANGE_NAME}
+    entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - app-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    hostname: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      
+      # Enable SASL for Zookeeper
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/zookeeper_jaas.conf"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-data:/var/lib/zookeeper/log
+      - ./zookeeper/config/zookeeper_jaas.conf:/etc/kafka/zookeeper_jaas.conf
+
+  kafka:
+    image: confluentinc/cp-kafka
+    hostname: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_jaas.conf"
+      KAFKA_SUPER_USERS: User:kafka-broker-1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+      - ./kafka/config/kafka_jaas.conf:/etc/kafka/kafka_jaas.conf
+    depends_on:
+      - zookeeper
 
 secrets:
   GITHUB_TOKEN:
     file: ./.github_token
 
 volumes:
-  mongo-data:
   postgres-data:
+  mongo-data:
   redis-data:
+  rabbitmq-data:
+  zookeeper-data:
+  kafka-data:
     
 networks:
   app-network:

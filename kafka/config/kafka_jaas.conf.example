@@ -1,0 +1,13 @@
+# For inter-broker auth (if you had multiple brokers)
+KafkaServer {
+   org.apache.kafka.common.security.scram.ScramLoginModule required
+   username="kafka-broker-1"
+   password="broker-secret-123";
+};
+
+# For connecting to Zookeeper
+Client {
+   org.apache.kafka.common.security.scram.ScramLoginModule required
+   username="kafka"
+   password="kafka-secret";
+};

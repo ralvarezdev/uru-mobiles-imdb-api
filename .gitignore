@@ -33,3 +33,7 @@ go.work.sum
 
 # GitHub token
 .github_token
+
+# Zookeeper and Kafka configuration files
+zookeeper/config/zookeeper_jaas.conf
+kafka/config/kafka_jaas.conf
