@@ -37,3 +37,6 @@ go.work.sum
 # Zookeeper and Kafka configuration files
 zookeeper/config/zookeeper_jaas.conf
 kafka/config/kafka_jaas.conf
+
+# Client properties files
+kafka/config/client.properties

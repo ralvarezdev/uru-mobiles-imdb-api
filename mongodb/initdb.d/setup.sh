@@ -1,4 +1,5 @@
 #!/bin/bash
+# 
 mongosh <<EOF
 use ${INTERNAL_FILE_STORAGE_MONGODB_DB}
 db.createUser({

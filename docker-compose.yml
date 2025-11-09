@@ -64,19 +64,39 @@ services:
         MOVIES_MONGODB_DB: ${MOVIES_MONGODB_DB}
         MOVIES_MONGODB_USERNAME: ${MOVIES_MONGODB_USERNAME}
         MOVIES_MONGODB_PASSWORD: ${MOVIES_MONGODB_PASSWORD}
+      ulimits:
+        nofile:
+          soft: 64000
+          hard: 64000
       volumes:
-        - mongo-data:/data/db
+        - mongodb-data:/data/db
         - ./mongodb/initdb.d:/docker-entrypoint-initdb.d:ro
       networks:
         - app-network
-
+        
   redis:
     image: redis:latest
     hostname: redis
     volumes:
       - redis-data:/data
-      - ./redis/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
-      - ./redis/initdb.d:/docker-entrypoint-initdb.d:ro
+    command: 
+      - redis-server
+      - --aclfile
+      - /data/users.acl
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  redis-setup:
+    image: redis:latest
+    depends_on:
+      redis:
+        condition: service_healthy
     environment:
       REDIS_AUTH_USER: ${REDIS_AUTH_USER}
       REDIS_AUTH_PASSWORD: ${REDIS_AUTH_PASSWORD}
@@ -87,13 +107,11 @@ services:
       REDIS_MOVIES_USER: ${REDIS_MOVIES_USER}
       REDIS_MOVIES_PASSWORD: ${REDIS_MOVIES_PASSWORD}
       REDIS_MOVIES_DB: ${REDIS_MOVIES_DB}
-    command: [ "redis-server", "--requirepass", "${REDIS_DEFAULT_PASSWORD}" , "--aclfile", "/data/users.acl"]
-    entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    command: ["/bin/sh", "/tmp/setup.sh"]  # ← Just use command
+    volumes:
+      - ./redis-setup/entrypoint.sh:/tmp/entrypoint.sh:ro
+      - ./redis-setup/initdb.d:/docker-entrypoint-initdb.d:ro
+    entrypoint: ["/bin/sh", "/tmp/entrypoint.sh"]
     networks:
       - app-network
 
@@ -107,28 +125,28 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       CLUSTER_ID: 2x8icf1ETEmIQ1v0AZ1GWA
-      
-      # Listeners with SASL
+            
+      # Listeners with SASL (internal only)
       KAFKA_LISTENERS: SASL_PLAINTEXT://kafka:9092,CONTROLLER://kafka:9094
       KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_PLAINTEXT:SASL_PLAINTEXT,CONTROLLER:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: CONTROLLER
-      
-      # SASL Configuration
-      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
-      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+            
+      # SASL Configuration - SCRAM
+      KAFKA_SASL_ENABLED_MECHANISMS: SCRAM-SHA-256
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: SCRAM-SHA-256
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_jaas.conf"
-           
+                 
       # Enable ACLs (Authorization)
       KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
-      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "false"
-      KAFKA_SUPER_USERS: User:admin
-      
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"  # Temporarily true to create users
+      KAFKA_SUPER_USERS: User:${KAFKA_ADMIN_USERNAME}
+            
       # Replication settings
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      
+            
       # Event Store: Infinite retention + Fast delivery
       KAFKA_NUM_NETWORK_THREADS: 8
       KAFKA_NUM_IO_THREADS: 8
@@ -137,24 +155,38 @@ services:
       KAFKA_LOG_RETENTION_HOURS: -1
       KAFKA_LOG_RETENTION_BYTES: -1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      
-      # Admin credentials
-      KAFKA_ADMIN_USERNAME: admin
-      KAFKA_ADMIN_PASSWORD: admin-secret
-      
-      # Additional usernames for configuration
-      KAFKA_AUTH_USERNAME: auth
-      KAFKA_USER_USERNAME: user
-      KAFKA_MOVIES_USERNAME: movies
-    entrypoint: ["/bin/bash", "/usr/local/bin/kafka-entrypoint.sh"]
     volumes:
       - kafka-data:/var/lib/kafka/data
-      - ./kafka/config/kafka_jaas.conf:/etc/kafka/kafka_jaas.conf
+      - ./kafka/config/kafka_jaas.conf:/etc/kafka/kafka_jaas.conf:ro
+      - ./kafka/config/client.properties:/client.properties:ro
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:9092", "--command-config", "/client.properties"]
       interval: 10s
       timeout: 10s
-      retries: 5
+      retries: 10
+      start_period: 15s
+    networks:
+      - app-network
+
+  kafka-setup:
+    image: confluentinc/cp-kafka
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_ADMIN_USERNAME: ${KAFKA_ADMIN_USERNAME}
+      KAFKA_ADMIN_PASSWORD: ${KAFKA_ADMIN_PASSWORD}
+      KAFKA_AUTH_USERNAME: ${KAFKA_AUTH_USERNAME}
+      KAFKA_AUTH_PASSWORD: ${KAFKA_AUTH_PASSWORD}
+      KAFKA_USER_USERNAME: ${KAFKA_USER_USERNAME}
+      KAFKA_USER_PASSWORD: ${KAFKA_USER_PASSWORD}
+      KAFKA_MOVIES_USERNAME: ${KAFKA_MOVIES_USERNAME}
+      KAFKA_MOVIES_PASSWORD: ${KAFKA_MOVIES_PASSWORD}
+    entrypoint: ["/bin/bash", "/docker-entrypoint-initdb.d/setup.sh"]
+    volumes:
+      - ./kafka-setup/initdb.d:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
 
 secrets:
   GITHUB_TOKEN:
@@ -162,7 +194,7 @@ secrets:
 
 volumes:
   postgres-data:
-  mongo-data:
+  mongodb-data:
   redis-data:
   rabbitmq-data:
   kafka-data:
