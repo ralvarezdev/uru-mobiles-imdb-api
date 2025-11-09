@@ -1,6 +1,0 @@
-Server {
-   org.apache.kafka.common.security.plain.PlainLoginModule required
-   username="zookeeper-server"      # Zookeeper's own identity
-   password="zk-secret"             # Zookeeper's own password
-   user_kafka="kafka-secret";       # User "kafka" can connect
-};

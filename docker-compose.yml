@@ -5,7 +5,7 @@ services:
     hostname: api-ralvarez-dev
     ports:
       - "9000:80"
-      
+
   internal-mailer:
     build:
       context: ./internal-mailer
@@ -28,7 +28,7 @@ services:
     restart: on-failure
     networks:
       - app-network
-      
+
   postgres:
     image: postgres:latest
     hostname: postgres
@@ -97,71 +97,49 @@ services:
     networks:
       - app-network
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    hostname: rabbitmq
-    ports:
-      - "15672:15672" # Management UI
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-      - ./rabbitmq/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
-      - ./rabbitmq/initdb.d:/docker-entrypoint-initdb.d:ro
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
-      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
-      RABBITMQ_AUTH_USER: ${RABBITMQ_AUTH_USER}
-      RABBITMQ_AUTH_PASSWORD: ${RABBITMQ_AUTH_PASSWORD}
-      RABBITMQ_USER_USER: ${RABBITMQ_USER_USER}
-      RABBITMQ_USER_PASSWORD: ${RABBITMQ_USER_PASSWORD}
-      RABBITMQ_MOVIES_USER: ${RABBITMQ_MOVIES_USER}
-      RABBITMQ_MOVIES_PASSWORD: ${RABBITMQ_MOVIES_PASSWORD}
-      RABBITMQ_TOKEN_EXCHANGE_NAME: ${RABBITMQ_TOKEN_EXCHANGE_NAME}
-      RABBITMQ_USER_EXCHANGE_NAME: ${RABBITMQ_USER_EXCHANGE_NAME}
-    entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
-    healthcheck:
-      test: rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
-    networks:
-      - app-network
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper
-    hostname: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      
-      # Enable SASL for Zookeeper
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/zookeeper_jaas.conf"
-    volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
-      - zookeeper-data:/var/lib/zookeeper/log
-      - ./zookeeper/config/zookeeper_jaas.conf:/etc/kafka/zookeeper_jaas.conf
-
   kafka:
     image: confluentinc/cp-kafka
     hostname: kafka
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # KRaft settings
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      CLUSTER_ID: 2x8icf1ETEmIQ1v0AZ1GWA
+      
+      # Listeners settings for broker and controller communication
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9094
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      
+      # Replication settings
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      
+      # Event Store: Infinite retention + Fast delivery
+      KAFKA_NUM_NETWORK_THREADS: 8
+      KAFKA_NUM_IO_THREADS: 8
+      KAFKA_LINGER_MS: 0
+      KAFKA_COMPRESSION_TYPE: lz4
+      KAFKA_LOG_RETENTION_HOURS: -1
+      KAFKA_LOG_RETENTION_BYTES: -1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      
+      # Security settings
       KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_jaas.conf"
       KAFKA_SUPER_USERS: User:kafka-broker-1
+    entrypoint: ["/bin/bash", "/usr/local/bin/kafka-entrypoint.sh"]
     volumes:
       - kafka-data:/var/lib/kafka/data
       - ./kafka/config/kafka_jaas.conf:/etc/kafka/kafka_jaas.conf
-    depends_on:
-      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
 secrets:
   GITHUB_TOKEN:
@@ -172,9 +150,8 @@ volumes:
   mongo-data:
   redis-data:
   rabbitmq-data:
-  zookeeper-data:
   kafka-data:
-    
+
 networks:
   app-network:
     driver: bridge
