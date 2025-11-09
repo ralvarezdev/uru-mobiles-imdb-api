@@ -1,0 +1,32 @@
+# kurrentdb.conf
+
+# --------------------------------
+# Security Settings (MUST BE SECURE)
+# We disable insecure mode for permissions to work
+# --------------------------------
+# KurrentDB is secure by default; ensure you use TLS in production.
+# For local testing without a proper certificate:
+DisableInternalTls: true 
+DisableExternalTls: true 
+CertificateFile: "" # Omit certificate
+CertificatePassword: "" # Omit password
+
+# --------------------------------
+# Built-in Users (Required)
+# Set strong passwords for the default admin users
+# --------------------------------
+Users:
+    - User: admin
+      Password: Your_Secure_Admin_Password_1
+      Roles: $admins
+    - User: ops
+      Password: Your_Secure_Ops_Password_2
+      Roles: $operators
+
+# --------------------------------
+# Custom Service Account
+# Create a dedicated user for your microservice and assign roles
+# --------------------------------
+    - User: orders_service_user
+      Password: Service_Password_321
+      Roles: OrderWriters, OrderReaders
