@@ -3,6 +3,7 @@ KafkaServer {
    org.apache.kafka.common.security.scram.ScramLoginModule required
    username="kafka-broker-1"
    password="broker-password"
+   user_admin="admin-password"
    user_auth="auth-password"
    user_user="user-password"
    user_movies="movies-password";
