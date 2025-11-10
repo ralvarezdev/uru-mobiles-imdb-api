@@ -154,6 +154,54 @@ set_stream_acl() {
     fi
 }
 
+# Function to set default ACLs
+set_default_acls() {
+    echo ""
+    echo "Setting default stream ACLs... "
+    
+    local event_id=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid)
+    
+    local payload=$(jq -n \
+        --arg eventId "$event_id" \
+        '{
+            "eventId": $eventId,
+            "eventType": "update-default-acl",
+            "data": {
+                "$userStreamAcl": {
+                    "$r": "$all",
+                    "$w": "$all",
+                    "$d": ["admin"],
+                    "$mr": ["admin"],
+                    "$mw": ["admin"]
+                },
+                "$systemStreamAcl": {
+                    "$r": ["admin"],
+                    "$w": ["admin"],
+                    "$d": ["admin"],
+                    "$mr": ["admin"],
+                    "$mw": ["admin"]
+                }
+            }
+        }')
+    
+    local response=$(curl $CURL_OPTS -s -w "\n%{http_code}" -X POST \
+        "$KURRENTDB_SCHEME://$KURRENTDB_HOST:$KURRENTDB_PORT/streams/\$settings" \
+        -H "Content-Type: application/vnd.eventstore.events+json" \
+        -H "ES-ExpectedVersion: -2" \
+        -u "$KURRENTDB_ADMIN_USERNAME:$KURRENTDB_ADMIN_PASSWORD" \
+        -d "[$payload]")
+    
+    local http_code=$(echo "$response" | tail -n1)
+    local response_body=$(echo "$response" | head -n -1)
+    
+    if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
+        echo -e "${GREEN}✓ Set${NC}"
+    else
+        echo -e "${RED}✗ Failed (HTTP $http_code)${NC}"
+        echo -e "${RED}Response: $response_body${NC}"
+    fi
+}
+
 # Create Users
 echo "=========================================="
 echo "Creating Users"
@@ -215,46 +263,7 @@ echo "=========================================="
 echo "Setting Default ACLs"
 echo "=========================================="
 
-default_user_readers=\$admins
-default_system_readers=\$admins
-
-default_user_readers_json=$(echo "$default_user_readers" | jq -R 'split(",") | map(select(length > 0))')
-default_system_readers_json=$(echo "$default_system_readers" | jq -R 'split(",") | map(select(length > 0))')
-
-payload=$(jq -n \
-    --argjson user_r "$default_user_readers_json" \
-    --argjson system_r "$default_system_readers_json" \
-    '{
-        "$userStreamAcl": {
-            "$r": $user_r,
-            "$w": ["$admins"],
-            "$d": ["$admins"],
-            "$mr": ["$admins"],
-            "$mw": ["$admins"]
-        },
-        "$systemStreamAcl": {
-            "$r": $system_r,
-            "$w": ["$admins"],
-            "$d": ["$admins"],
-            "$mr": ["$admins"],
-            "$mw": ["$admins"]
-        }
-    }')
-
-echo -n "Setting default stream ACLs... "
-response=$(curl $CURL_OPTS -s -w "\n%{http_code}" -X POST \
-    "${KURRENTDB_SCHEME}://$KURRENTDB_HOST:$KURRENTDB_PORT/streams/\$settings" \
-    -H "Content-Type: application/json" \
-    -u "$KURRENTDB_ADMIN_USERNAMENAME:$KURRENTDB_ADMIN_PASSWORDWORD" \
-    -d "$payload")
-
-http_code=$(echo "$response" | tail -n1)
-
-if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
-    echo -e "${GREEN}✓ Set${NC}"
-else
-    echo -e "${RED}✗ Failed (HTTP $http_code)${NC}"
-fi
+set_default_acls
 
 echo ""
 echo "=========================================="
