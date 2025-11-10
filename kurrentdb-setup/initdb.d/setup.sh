@@ -212,16 +212,6 @@ if [ -n "$KURRENTDB_AUTH_USERNAME" ] && [ -n "$KURRENTDB_AUTH_PASSWORD" ]; then
     create_user "$KURRENTDB_AUTH_USERNAME" "Authentication Service" "$KURRENTDB_AUTH_PASSWORD" ""
 fi
 
-# Mailer Service
-if [ -n "$KURRENTDB_MAILER_USERNAME" ] && [ -n "$KURRENTDB_MAILER_PASSWORD" ]; then
-    create_user "$KURRENTDB_MAILER_USERNAME" "Mailer Service" "$KURRENTDB_MAILER_PASSWORD" ""
-fi
-
-# User Service
-if [ -n "$KURRENTDB_USER_USERNAME" ] && [ -n "$KURRENTDB_USER_PASSWORD" ]; then
-    create_user "$KURRENTDB_USER_USERNAME" "User Service" "$KURRENTDB_USER_PASSWORD" ""
-fi
-
 # Movies Service
 if [ -n "$KURRENTDB_MOVIES_USERNAME" ] && [ -n "$KURRENTDB_MOVIES_PASSWORD" ]; then
     create_user "$KURRENTDB_MOVIES_USERNAME" "Movies Service" "$KURRENTDB_MOVIES_PASSWORD" ""
@@ -233,27 +223,11 @@ echo "=========================================="
 echo "Setting Stream ACLs"
 echo "=========================================="
 
-# Tokens stream
-if [ -n "$KURRENTDB_TOKENS_STREAM" ]; then
-    set_stream_acl \
-        "$KURRENTDB_TOKENS_STREAM" \
-        "$KURRENTDB_USER_USERNAME,$KURRENTDB_MOVIES_USERNAME" \
-        "$KURRENTDB_AUTH_USERNAME"
-fi
-
 # Usernames stream
 if [ -n "$KURRENTDB_USERNAMES_STREAM" ]; then
     set_stream_acl \
         "$KURRENTDB_USERNAMES_STREAM" \
         "$KURRENTDB_MOVIES_USERNAME" \
-        "$KURRENTDB_AUTH_USERNAME"
-fi
-
-# Mails stream
-if [ -n "$KURRENTDB_MAILS_STREAM" ]; then
-    set_stream_acl \
-        "$KURRENTDB_MAILS_STREAM" \
-        "$KURRENTDB_MAILER_USERNAME" \
         "$KURRENTDB_AUTH_USERNAME"
 fi
 
@@ -272,13 +246,9 @@ echo "=========================================="
 echo ""
 echo "Configured Services:"
 [ -n "$KURRENTDB_AUTH_USERNAME" ] && echo "  ✓ $KURRENTDB_AUTH_USERNAME"
-[ -n "$KURRENTDB_MAILER_USERNAME" ] && echo "  ✓ $KURRENTDB_MAILER_USERNAME"
-[ -n "$KURRENTDB_USER_USERNAME" ] && echo "  ✓ $KURRENTDB_USER_USERNAME"
 [ -n "$KURRENTDB_MOVIES_USERNAME" ] && echo "  ✓ $KURRENTDB_MOVIES_USERNAME"
 [ -n "$KURRENTDB_KURRENTDB_ADMIN_USERNAMENAME" ] && echo "  ✓ $KURRENTDB_KURRENTDB_ADMIN_USERNAMENAME"
 echo ""
 echo "Configured Streams:"
-[ -n "$KURRENTDB_TOKENS_STREAM" ] && echo "  ✓ $KURRENTDB_TOKENS_STREAM"
 [ -n "$KURRENTDB_USERNAMES_STREAM" ] && echo "  ✓ $KURRENTDB_USERNAMES_STREAM"
-[ -n "$KURRENTDB_MAILS_STREAM" ] && echo "  ✓ $KURRENTDB_MAILS_STREAM"
 echo ""

@@ -134,6 +134,7 @@ services:
     hostname: redis
     volumes:
       - redis-data:/data
+      - ./redis/config/redis.conf:/usr/local/etc/redis/redis.conf
       - ./redis/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
       - ./redis/initdb.d:/docker-entrypoint-initdb.d:ro
     environment:
@@ -155,6 +156,7 @@ services:
     command:
       [
         "redis-server",
+        "/usr/local/etc/redis/redis.conf",
         "--requirepass",
         "${REDIS_DEFAULT_PASSWORD}",
         "--aclfile",
@@ -263,20 +265,14 @@ services:
 
       # Usernames
       KURRENTDB_AUTH_USERNAME: ${KURRENTDB_AUTH_USERNAME}
-      KURRENTDB_MAILER_USERNAME: ${KURRENTDB_MAILER_USERNAME}
-      KURRENTDB_USER_USERNAME: ${KURRENTDB_USER_USERNAME}
       KURRENTDB_MOVIES_USERNAME: ${KURRENTDB_MOVIES_USERNAME}
 
       # Passwords
       KURRENTDB_AUTH_PASSWORD: ${KURRENTDB_AUTH_PASSWORD}
-      KURRENTDB_MAILER_PASSWORD: ${KURRENTDB_MAILER_PASSWORD}
-      KURRENTDB_USER_PASSWORD: ${KURRENTDB_USER_PASSWORD}
       KURRENTDB_MOVIES_PASSWORD: ${KURRENTDB_MOVIES_PASSWORD}
 
       # Stream Names
-      KURRENTDB_TOKENS_STREAM: ${KURRENTDB_TOKENS_STREAM}
       KURRENTDB_USERNAMES_STREAM: ${KURRENTDB_USERNAMES_STREAM}
-      KURRENTDB_MAILS_STREAM: ${KURRENTDB_MAILS_STREAM}
     volumes:
       - ./kurrentdb-setup/initdb.d:/docker-entrypoint-initdb.d:ro
     networks:
