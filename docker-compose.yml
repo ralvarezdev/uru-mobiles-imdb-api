@@ -198,6 +198,7 @@ services:
         "--certificate-private-key-file=/certs/node.key",
         "--run-projections=All", # Enable projections
         "--start-standard-projections", # Start standard projections
+        "--enable-atom-pub-over-http",  # Enable HTTP API
         "--cluster-size=1", # Single node cluster
       ]
     volumes:

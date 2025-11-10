@@ -1,5 +1,6 @@
 FROM alpine:latest
 
+# Install dependencies
 RUN apk add --no-cache curl jq bash ca-certificates
 
 USER root
