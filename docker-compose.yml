@@ -15,6 +15,7 @@ services:
     ports:
       - "9101:50051"
     environment:
+      # General Configuration
       MODE: ${INTERNAL_MAILER_MODE}
 
       # MailerSend Configuration
@@ -140,9 +141,7 @@ services:
       REDIS_DEFAULT_PASSWORD: ${REDIS_DEFAULT_PASSWORD}
 
       # Databases
-      REDIS_AUTH_DB: ${REDIS_AUTH_DB}
-      REDIS_USER_DB: ${REDIS_USER_DB}
-      REDIS_MOVIES_DB: ${REDIS_MOVIES_DB}
+      REDIS_TOKENS_DB: ${REDIS_TOKENS_DB}
 
       # Users
       REDIS_AUTH_USER: ${REDIS_AUTH_USER}
@@ -182,6 +181,7 @@ services:
       - ./rabbitmq/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
       - ./rabbitmq/initdb.d:/docker-entrypoint-initdb.d:ro
     environment:
+      # Logs
       RABBITMQ_LOGS: "/var/log/rabbitmq/rabbitmq.log"
       RABBITMQ_LOG_LEVEL: "warning"
 
@@ -200,12 +200,10 @@ services:
 
       # Passwords
       RABBITMQ_AUTH_PASSWORD: ${RABBITMQ_AUTH_PASSWORD}
-      RABBITMQ_USER_PASSWORD: ${RABBITMQ_USER_PASSWORD}
       RABBITMQ_MOVIES_PASSWORD: ${RABBITMQ_MOVIES_PASSWORD}
       RABBITMQ_INTERNAL_MAILER_PASSWORD: ${RABBITMQ_INTERNAL_MAILER_PASSWORD}
 
       # Exchanges
-      RABBITMQ_TOKENS_EXCHANGE_NAME: ${RABBITMQ_TOKENS_EXCHANGE_NAME}
       RABBITMQ_USERNAMES_EXCHANGE_NAME: ${RABBITMQ_USERNAMES_EXCHANGE_NAME}
       RABBITMQ_MAILS_EXCHANGE_NAME: ${RABBITMQ_MAILS_EXCHANGE_NAME}
     entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
@@ -228,7 +226,7 @@ services:
       - "2113:2113" # Default client port (gRPC and HTTP Admin UI)
     environment:
       # Logging, not sure if this is the correct variable
-      KURRENTDB_LOG_LEVEL: Warning  # <-- Add this line
+      KURRENTDB_LOG_LEVEL: Warning 
       
       # Admin Credentials
       KURRENTDB_DEFAULT_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
