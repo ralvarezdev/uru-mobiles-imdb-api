@@ -6,8 +6,8 @@ KDB_ARCH_TAG="latest" # Default for x86/amd64 systems on KurrentDB Docker image
 
 # Check for 64-bit ARM (Raspberry Pi 3/4/5 running 64-bit OS)
 if [ "$HOST_ARCH" = "aarch64" ] || [ "$HOST_ARCH" = "arm64" ]; then
-  # Use the specific ARM tag you identified for KurrentDB image
-  KDB_ARCH_TAG="experimental-arm64v8"
+  # Use the specific ARM tag you identified for KurrentDB image (must be updated if a different tag is available)
+  KDB_ARCH_TAG="25.1.0-experimental-arm64-8.0-jammy"
   echo "Host architecture detected as ARM64. Using tag: $KDB_ARCH_TAG"
 
 # Check for 32-bit ARM (Older Raspberry Pi or 32-bit OS)
