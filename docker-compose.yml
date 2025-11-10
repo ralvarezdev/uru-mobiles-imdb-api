@@ -221,6 +221,8 @@ services:
   kurrentdb:
     build:
       context: ./kurrentdb
+      args:
+        BASE_TAG: ${KDB_ARCH_TAG} # experimental-arm64v8 for ARM64, latest for x86_64
     hostname: kurrentdb
     ports:
       - "2113:2113" # Default client port (gRPC and HTTP Admin UI)
@@ -249,8 +251,6 @@ services:
   kurrentdb-setup:
     build:
       context: ./kurrentdb-setup
-      args:
-        BASE_TAG: ${KDB_ARCH_TAG} # experimental-arm64v8 for ARM64, latest for x86_64
     depends_on:
       kurrentdb:
         condition: service_healthy
