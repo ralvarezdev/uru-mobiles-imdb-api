@@ -16,19 +16,19 @@ services:
       - "9101:50051"
     environment:
       MODE: ${INTERNAL_MAILER_MODE}
-      
+
       # MailerSend Configuration
       MAILERSEND_DOMAIN: ${INTERNAL_MAILER_MAILERSEND_DOMAIN}
       MAILERSEND_NAME: ${INTERNAL_MAILER_MAILERSEND_NAME}
       MAILERSEND_API_KEY: ${INTERNAL_MAILER_MAILERSEND_API_KEY}
       MAILERSEND_SENDER_NAME: ${INTERNAL_MAILER_MAILERSEND_SENDER_NAME}
-      
+
       # Resend Configuration
       RESEND_DOMAIN: ${INTERNAL_MAILER_RESEND_DOMAIN}
       RESEND_NAME: ${INTERNAL_MAILER_RESEND_NAME}
       RESEND_API_KEY: ${INTERNAL_MAILER_RESEND_API_KEY}
       RESEND_SENDER_NAME: ${INTERNAL_MAILER_RESEND_SENDER_NAME}
-      
+
       # Selected Mailer
       MAILER: ${INTERNAL_MAILER_MAILER}
     restart: on-failure
@@ -41,19 +41,20 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
       - ./postgres/initdb.d:/docker-entrypoint-initdb.d:ro
+      - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     environment:
       # Superuser
       POSTGRES_USER: ${POSTGRES_SUPERUSER_NAME}
       POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
-      
+
       # Databases
       POSTGRES_AUTH_DB_NAME: ${POSTGRES_AUTH_DB_NAME}
       POSTGRES_USER_DB_NAME: ${POSTGRES_USER_DB_NAME}
-      
+
       # Users
       POSTGRES_AUTH_DB_USER: ${POSTGRES_AUTH_DB_USER}
       POSTGRES_USER_DB_USER: ${POSTGRES_USER_DB_USER}
-      
+
       # Passwords
       POSTGRES_AUTH_DB_PASSWORD: ${POSTGRES_AUTH_DB_PASSWORD}
       POSTGRES_USER_DB_PASSWORD: ${POSTGRES_USER_DB_PASSWORD}
@@ -76,15 +77,15 @@ services:
       # Root User
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      
+
       # Databases
       INTERNAL_FILE_STORAGE_MONGODB_DB: ${INTERNAL_FILE_STORAGE_MONGODB_DB}
       MOVIES_MONGODB_DB: ${MOVIES_MONGODB_DB}
-      
+
       # Users
       INTERNAL_FILE_STORAGE_MONGODB_USERNAME: ${INTERNAL_FILE_STORAGE_MONGODB_USERNAME}
       MOVIES_MONGODB_USERNAME: ${MOVIES_MONGODB_USERNAME}
-      
+
       # Passwords
       INTERNAL_FILE_STORAGE_MONGODB_PASSWORD: ${INTERNAL_FILE_STORAGE_MONGODB_PASSWORD}
       MOVIES_MONGODB_PASSWORD: ${MOVIES_MONGODB_PASSWORD}
@@ -92,9 +93,26 @@ services:
       nofile:
         soft: 64000
         hard: 64000
+    command: ["mongod", "--config", "/etc/mongod.conf"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongo",
+          "--username",
+          "${MONGO_INITDB_ROOT_USERNAME}",
+          "--password",
+          "${MONGO_INITDB_ROOT_PASSWORD}",
+          "--eval",
+          "db.adminCommand('ping')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - mongodb-data:/data/db
       - ./mongodb/initdb.d:/docker-entrypoint-initdb.d:ro
+      - ./mongodb/config/mongod.conf:/etc/mongod.conf:ro
     networks:
       - app-network
 
@@ -108,17 +126,17 @@ services:
     environment:
       # Root Password
       REDIS_DEFAULT_PASSWORD: ${REDIS_DEFAULT_PASSWORD}
-      
+
       # Databases
       REDIS_AUTH_DB: ${REDIS_AUTH_DB}
       REDIS_USER_DB: ${REDIS_USER_DB}
       REDIS_MOVIES_DB: ${REDIS_MOVIES_DB}
-      
+
       # Users
       REDIS_AUTH_USER: ${REDIS_AUTH_USER}
       REDIS_USER_USER: ${REDIS_USER_USER}
       REDIS_MOVIES_USER: ${REDIS_MOVIES_USER}
-      
+
       # Passwords
       REDIS_AUTH_PASSWORD: ${REDIS_AUTH_PASSWORD}
       REDIS_USER_PASSWORD: ${REDIS_USER_PASSWORD}
@@ -130,6 +148,8 @@ services:
         "${REDIS_DEFAULT_PASSWORD}",
         "--aclfile",
         "/data/users.acl",
+        "--loglevel",
+        "warning",
       ]
     entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
     healthcheck:
@@ -150,25 +170,28 @@ services:
       - ./rabbitmq/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
       - ./rabbitmq/initdb.d:/docker-entrypoint-initdb.d:ro
     environment:
+      RABBITMQ_LOGS: "/var/log/rabbitmq/rabbitmq.log"
+      RABBITMQ_LOG_LEVEL: "warning"
+
       # Default User
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD}
-      
+
       # Default VHost
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
-      
+
       # Users
       RABBITMQ_AUTH_USER: ${RABBITMQ_AUTH_USER}
       RABBITMQ_USER_USER: ${RABBITMQ_USER_USER}
       RABBITMQ_MOVIES_USER: ${RABBITMQ_MOVIES_USER}
       RABBITMQ_INTERNAL_MAILER_USER: ${RABBITMQ_INTERNAL_MAILER_USER}
-      
+
       # Passwords
       RABBITMQ_AUTH_PASSWORD: ${RABBITMQ_AUTH_PASSWORD}
       RABBITMQ_USER_PASSWORD: ${RABBITMQ_USER_PASSWORD}
       RABBITMQ_MOVIES_PASSWORD: ${RABBITMQ_MOVIES_PASSWORD}
       RABBITMQ_INTERNAL_MAILER_PASSWORD: ${RABBITMQ_INTERNAL_MAILER_PASSWORD}
-      
+
       # Exchanges
       RABBITMQ_TOKENS_EXCHANGE_NAME: ${RABBITMQ_TOKENS_EXCHANGE_NAME}
       RABBITMQ_USERNAMES_EXCHANGE_NAME: ${RABBITMQ_USERNAMES_EXCHANGE_NAME}
@@ -189,7 +212,10 @@ services:
     hostname: kurrentdb
     ports:
       - "2113:2113" # Default client port (gRPC and HTTP Admin UI)
-    environment:        
+    environment:
+      # Logging, not sure if this is the correct variable
+      KURRENTDB_LOG_LEVEL: Warning  # <-- Add this line
+      
       # Admin Credentials
       KURRENTDB_DEFAULT_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
     command: [
@@ -198,7 +224,7 @@ services:
         "--certificate-private-key-file=/certs/node.key",
         "--run-projections=All", # Enable projections
         "--start-standard-projections", # Start standard projections
-        "--enable-atom-pub-over-http",  # Enable HTTP API
+        "--enable-atom-pub-over-http", # Enable HTTP API
         "--cluster-size=1", # Single node cluster
       ]
     volumes:
