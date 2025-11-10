@@ -184,23 +184,26 @@ services:
       - app-network
 
   kurrentdb:
-    image: kurrentplatform/kurrentdb:latest
+    build:
+      context: ./kurrentdb
     hostname: kurrentdb
     ports:
       - "2113:2113" # Default client port (gRPC and HTTP Admin UI)
-    environment:
-      EVENTSTORE_DEFAULT_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
+    environment:        
+      # Admin Credentials
+      KURRENTDB_DEFAULT_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
     command: [
-        "--dev",
         # "${KURRENTDB_INSECURE}",
+        "--certificate-file=/certs/node.crt",
+        "--certificate-private-key-file=/certs/node.key",
         "--run-projections=All", # Enable projections
         "--start-standard-projections", # Start standard projections
-        "--enable-atom-pub-over-http", # Enable HTTP Atom Pub for Admin UI
         "--cluster-size=1", # Single node cluster
       ]
     volumes:
       - kurrentdb-data:/var/lib/kurrentdb/
       - kurrentdb-logs:/var/log/kurrentdb/
+      - ./kurrentdb/certs:/certs:ro
     networks:
       - app-network
 
@@ -212,10 +215,12 @@ services:
         condition: service_healthy
     environment:
       # Connection
+      KURRENTDB_SCHEME: https
       KURRENTDB_HOST: kurrentdb
       KURRENTDB_PORT: 2113
       KURRENTDB_ADMIN_USERNAME: ${KURRENTDB_ADMIN_USERNAME}
       KURRENTDB_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
+      CURL_OPTS: "-k"
 
       # Usernames
       KURRENTDB_AUTH_USERNAME: ${KURRENTDB_AUTH_USERNAME}
@@ -233,10 +238,6 @@ services:
       KURRENTDB_TOKENS_STREAM: ${KURRENTDB_TOKENS_STREAM}
       KURRENTDB_USERNAMES_STREAM: ${KURRENTDB_USERNAMES_STREAM}
       KURRENTDB_MAILS_STREAM: ${KURRENTDB_MAILS_STREAM}
-      
-      # Default ACLs
-      KURRENTDB_DEFAULT_USER_STREAM_READERS: ${KURRENTDB_DEFAULT_USER_STREAM_READERS}
-      KURRENTDB_DEFAULT_SYSTEM_STREAM_READERS: ${KURRENTDB_DEFAULT_SYSTEM_STREAM_READERS}
     volumes:
       - ./kurrentdb-setup/initdb.d:/docker-entrypoint-initdb.d:ro
     networks:

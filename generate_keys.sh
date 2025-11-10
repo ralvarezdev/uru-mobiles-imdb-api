@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Create the JWT keys directory if it doesn't exist
+mkdir -p ./jwt/keys
+
 # Check if OpenSSL is installed
 if ! command -v openssl >/dev/null 2>&1; then
     echo "Error: OpenSSL is not installed or not found in PATH."

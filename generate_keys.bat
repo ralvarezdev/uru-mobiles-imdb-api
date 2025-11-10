@@ -1,5 +1,8 @@
 @echo off
 
+REM Create the keys directory if it doesn't exist
+mkdir jwt\keys
+
 REM Check if OpenSSL is installed
 where openssl >nul 2>&1
 if errorlevel 1 (

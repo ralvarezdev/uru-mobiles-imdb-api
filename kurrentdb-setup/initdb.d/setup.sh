@@ -18,16 +18,16 @@ NC='\033[0m'
 # Wait for KurrentDB to be ready
 echo "Waiting for KurrentDB to be ready..."
 for i in $(seq 1 $MAX_RETRIES); do
-    if curl -sf -u "$KURRENTDB_ADMIN_USERNAME:$KURRENTDB_ADMIN_PASSWORD" "http://$KURRENTDB_HOST:$KURRENTDB_PORT/gossip" > /dev/null 2>&1; then
+    if curl -sf -u "$KURRENTDB_ADMIN_USERNAME:$KURRENTDB_ADMIN_PASSWORD" "${KURRENTDB_SCHEME}://$KURRENTDB_HOST:$KURRENTDB_PORT/gossip" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ KurrentDB is ready!${NC}"
         break
     fi
-    
+
     if [ $i -eq $MAX_RETRIES ]; then
         echo -e "${RED}✗ ERROR: KurrentDB did not become ready in time${NC}"
         exit 1
     fi
-    
+
     echo "Waiting for KurrentDB... (attempt $i/$MAX_RETRIES)"
     sleep $RETRY_INTERVAL
 done
@@ -40,9 +40,9 @@ create_user() {
     local full_name=$2
     local password=$3
     local groups=$4
-    
+
     echo -n "Creating user: $login_name... "
-    
+
     local payload=$(jq -n \
         --arg login "$login_name" \
         --arg full "$full_name" \
@@ -54,15 +54,16 @@ create_user() {
             password: $pass,
             groups: ($grps | split(",") | map(select(. != "")))
         }')
-    
-    local response=$(curl -s -w "\n%{http_code}" -X POST \
-        "http://$KURRENTDB_HOST:$KURRENTDB_PORT/users/" \
+
+    local response=$(curl $CURL_OPTS -s -w "\n%{http_code}" -X POST \
+        "${KURRENTDB_SCHEME}://$KURRENTDB_HOST:$KURRENTDB_PORT/users/" \
         -H "Content-Type: application/json" \
         -u "$KURRENTDB_ADMIN_USERNAME:$KURRENTDB_ADMIN_PASSWORD" \
         -d "$payload")
-    
+
+
     local http_code=$(echo "$response" | tail -n1)
-    
+
     if [ "$http_code" = "201" ]; then
         echo -e "${GREEN}✓ Created${NC}"
     elif [ "$http_code" = "409" ]; then
@@ -77,17 +78,17 @@ set_stream_acl() {
     local stream=$1
     local readers=$2
     local writers=$3
-    
+
     echo ""
     echo "Stream: $stream"
     echo "  Read: $readers"
     echo "  Write: $writers"
     echo -n "  Setting ACL... "
-    
+
     # Convert comma-separated strings to JSON arrays
     local readers_json=$(echo "$readers" | jq -R 'split(",") | map(select(length > 0))')
     local writers_json=$(echo "$writers" | jq -R 'split(",") | map(select(length > 0))')
-    
+
     local payload=$(jq -n \
         --argjson readers "$readers_json" \
         --argjson writers "$writers_json" \
@@ -100,15 +101,15 @@ set_stream_acl() {
                 "$mw": [$admin]
             }
         }')
-    
-    local response=$(curl -s -w "\n%{http_code}" -X POST \
-        "http://$KURRENTDB_HOST:$KURRENTDB_PORT/streams/$stream/metadata" \
+
+    local response=$(curl $CURL_OPTS -s -w "\n%{http_code}" -X POST \
+        "${KURRENTDB_SCHEME}://$KURRENTDB_HOST:$KURRENTDB_PORT/streams/$stream/metadata" \
         -H "Content-Type: application/json" \
         -u "$KURRENTDB_ADMIN_USERNAME:$KURRENTDB_ADMIN_PASSWORD" \
         -d "$payload")
-    
+
     local http_code=$(echo "$response" | tail -n1)
-    
+
     if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
         echo -e "${GREEN}✓ Set${NC}"
     else
@@ -177,8 +178,8 @@ echo "=========================================="
 echo "Setting Default ACLs"
 echo "=========================================="
 
-default_user_readers="${KURRENTDB_DEFAULT_USER_STREAM_READERS:-\$admins}"
-default_system_readers="${KURRENTDB_DEFAULT_SYSTEM_STREAM_READERS:-\$admins}"
+default_user_readers=\$admins
+default_system_readers=\$admins
 
 default_user_readers_json=$(echo "$default_user_readers" | jq -R 'split(",") | map(select(length > 0))')
 default_system_readers_json=$(echo "$default_system_readers" | jq -R 'split(",") | map(select(length > 0))')
@@ -204,8 +205,8 @@ payload=$(jq -n \
     }')
 
 echo -n "Setting default stream ACLs... "
-response=$(curl -s -w "\n%{http_code}" -X POST \
-    "http://$KURRENTDB_HOST:$KURRENTDB_PORT/streams/\$settings" \
+response=$(curl $CURL_OPTS -s -w "\n%{http_code}" -X POST \
+    "${KURRENTDB_SCHEME}://$KURRENTDB_HOST:$KURRENTDB_PORT/streams/\$settings" \
     -H "Content-Type: application/json" \
     -u "$KURRENTDB_ADMIN_USERNAME:$KURRENTDB_ADMIN_PASSWORD" \
     -d "$payload")
