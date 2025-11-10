@@ -31,6 +31,12 @@ services:
 
       # Selected Mailer
       MAILER: ${INTERNAL_MAILER_MAILER}
+      
+      # RabbitMQ mails exchange routing keys
+      RABBITMQ_MAILS_EXCHANGE_WELCOME_EMAILS_KEY: ${RABBITMQ_MAILS_EXCHANGE_WELCOME_EMAILS_KEY}
+      RABBITMQ_MAILS_EXCHANGE_RESET_PASSWORD_EMAILS_KEY: ${RABBITMQ_MAILS_EXCHANGE_RESET_PASSWORD_EMAILS_KEY}
+      RABBITMQ_MAILS_EXCHANGE_VERIFICATION_EMAILS_KEY: ${RABBITMQ_MAILS_EXCHANGE_VERIFICATION_EMAILS_KEY}
+      RABBITMQ_MAILS_EXHCANGE_2FA_CODE_EMAILS_KEY: ${RABBITMQ_MAILS_EXHCANGE_2FA_CODE_EMAILS_KEY}
     restart: on-failure
     networks:
       - app-network
@@ -237,6 +243,8 @@ services:
   kurrentdb-setup:
     build:
       context: ./kurrentdb-setup
+      args:
+        BASE_TAG: ${KDB_ARCH_TAG} # experimental-arm64v8 for ARM64, latest for x86_64
     depends_on:
       kurrentdb:
         condition: service_healthy

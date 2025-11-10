@@ -1,4 +1,8 @@
-FROM kurrentplatform/kurrentdb:latest
+# Use 'latest' as the default (usually x86/amd64).
+ARG BASE_TAG=latest
+
+# Use the ARG in the FROM instruction.
+FROM kurrentplatform/kurrentdb:${BASE_TAG}
 
 USER root
 
