@@ -11,6 +11,6 @@ fi
 
 # Generate JWT keys using OpenSSL
 echo "Generating JWT Ed25519 key pair..."
-openssl genpkey -algorithm ed25519 -out jwt_private_key.pem
-openssl pkey -in jwt_private_key.pem -pubout -out jwt_public_key.pem
-echo "Keys generated: jwt_private_key.pem and jwt_public_key.pem"
+openssl genpkey -algorithm ed25519 -out jwt/keys/private_key.pem
+openssl pkey -in jwt/keys/private_key.pem -pubout -out jwt/keys/public_key.pem
+echo "Keys generated: jwt/keys/private_key.pem and jwt/keys/public_key.pem"

@@ -22,15 +22,15 @@ echo "Creating Redis users..."
 
 # Create user for gRPC Auth Service
 redis-cli ACL SETUSER "${REDIS_AUTH_USER}" on ">${REDIS_AUTH_PASSWORD}" "~*" "&${REDIS_TOKENS_DB}" "+@read" "+@write"
-echo "${GREEN}✓ Auth user created successfully!${NC}"
+echo "${GREEN}✓ Auth service created successfully!${NC}"
 
 # Create user for gRPC User Service
 redis-cli ACL SETUSER "${REDIS_USER_USER}" on ">${REDIS_USER_PASSWORD}" "~*" "&${REDIS_TOKENS_DB}" "+@read"
-echo "${GREEN}✓ User user created successfully!${NC}"
+echo "${GREEN}✓ User service created successfully!${NC}"
 
 # Create user for gRPC Movies Service
 redis-cli ACL SETUSER "${REDIS_MOVIES_USER}" on ">${REDIS_MOVIES_PASSWORD}" "~*" "&${REDIS_TOKENS_DB}" "+@read"
-echo "${GREEN}✓ Movies user created successfully!${NC}"
+echo "${GREEN}✓ Movies service created successfully!${NC}"
 
 # SAVE FIRST - while default user is still enabled
 redis-cli ACL SAVE
