@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/sh
 
 echo "=========================================="
 echo "RabbitMQ IMDB Setup: Starting..."
@@ -33,5 +32,5 @@ echo "${GREEN}✓ Internal Mailer user created successfully!${NC}"
 
 echo ""
 echo "=========================================="
-echo -e "${GREEN}RabbitMQ Setup: Complete!${NC}"
+echo "${GREEN}RabbitMQ Setup: Complete!${NC}"
 echo "=========================================="

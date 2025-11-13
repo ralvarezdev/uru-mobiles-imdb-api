@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 # Check if initialization is needed
 if [ -f /data/.initialized ]; then
@@ -19,7 +18,7 @@ ACL_EOF
     redis-server --daemonize yes --protected-mode no --aclfile /data/users.acl
     
     # Wait for Redis to be ready
-    until redis-cli ping 2>/dev/null; do
+    until (echo "AUTH ${REDIS_DEFAULT_PASSWORD}"; echo "PING") | redis-cli --no-auth-warning >/dev/null 2>&1; do
       echo "Waiting for Redis..."
       sleep 1
     done

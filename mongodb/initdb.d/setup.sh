@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/sh
 
 echo "=========================================="
 echo "MongoDB IMDB Setup: Starting..."
@@ -30,5 +29,5 @@ EOF
 
 echo ""
 echo "=========================================="
-echo -e "${GREEN}MongoDB Setup: Complete!${NC}"
+echo "${GREEN}MongoDB Setup: Complete!${NC}"
 echo "=========================================="

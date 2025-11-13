@@ -14,15 +14,15 @@ NC='\033[0m'
 echo "Creating Redis users..."
 
 # Create user for gRPC Auth Service
-redis-cli ACL SETUSER "${REDIS_AUTH_USER}" on ">${REDIS_AUTH_PASSWORD}" "~*" "&${REDIS_TOKENS_DB}" "+@read" "+@write"
+(echo "AUTH ${REDIS_DEFAULT_PASSWORD}"; echo "ACL SETUSER ${REDIS_AUTH_USER} on >${REDIS_AUTH_PASSWORD} ~* &${REDIS_TOKENS_DB} +@read +@write") | redis-cli
 echo "${GREEN}✓ Auth service created successfully!${NC}"
 
 # Create user for gRPC User Service
-redis-cli ACL SETUSER "${REDIS_USER_USER}" on ">${REDIS_USER_PASSWORD}" "~*" "&${REDIS_TOKENS_DB}" "+@read"
+(echo "AUTH ${REDIS_DEFAULT_PASSWORD}"; echo "ACL SETUSER ${REDIS_USER_USER} on >${REDIS_USER_PASSWORD} ~* &${REDIS_TOKENS_DB} +@read") | redis-cli
 echo "${GREEN}✓ User service created successfully!${NC}"
 
 # Create user for gRPC Movies Service
-redis-cli ACL SETUSER "${REDIS_MOVIES_USER}" on ">${REDIS_MOVIES_PASSWORD}" "~*" "&${REDIS_TOKENS_DB}" "+@read"
+(echo "AUTH $REDIS_DEFAULT_PASSWORD"; echo "ACL SETUSER ${REDIS_MOVIES_USER} on >${REDIS_MOVIES_PASSWORD} ~* &${REDIS_TOKENS_DB} +@read") | redis-cli
 echo "${GREEN}✓ Movies service created successfully!${NC}"
 
 # Save again with root authentication
@@ -33,5 +33,5 @@ echo "Users created successfully!"
 
 echo ""
 echo "=========================================="
-echo -e "${GREEN}Redis Setup: Complete!${NC}"
+echo "${GREEN}Redis Setup: Complete!${NC}"
 echo "=========================================="

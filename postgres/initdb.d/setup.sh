@@ -1,5 +1,4 @@
-#!/bin/sh
-set -e
+#!/bin/bash
 
 echo "=========================================="
 echo "Postgres IMDB Setup: Starting..."

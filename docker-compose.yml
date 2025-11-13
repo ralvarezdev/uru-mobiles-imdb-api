@@ -156,8 +156,8 @@ services:
       
       # Server configuration
       PORT: 50051
-      AUTH_SERVICE_ADDRESS: auth:50051
-      INTERNAL_AUTH_SERVICE_ADDRESS: auth:50052
+      AUTH_SERVICE_ADDRESS: http://auth:50051
+      INTERNAL_AUTH_SERVICE_ADDRESS: http://auth:50052
       
       # Postgres Connection
       POSTGRES_DSN: postgres://${POSTGRES_USER_DB_USER}:${POSTGRES_USER_DB_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_USER_DB_NAME}?sslmode=disable
@@ -268,7 +268,7 @@ services:
     hostname: redis
     volumes:
       - redis-data:/data
-      - ./redis/config/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
       - ./redis/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
       - ./redis/initdb.d:/docker-entrypoint-initdb.d:ro
     environment:

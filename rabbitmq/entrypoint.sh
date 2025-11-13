@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/sh
 
 # Check if RabbitMQ data actually exists (not just the marker file)
 if [ ! -d "/var/lib/rabbitmq/mnesia" ] || [ -z "$(ls -A /var/lib/rabbitmq/mnesia 2>/dev/null)" ]; then
@@ -23,7 +22,7 @@ if [ ! -d "/var/lib/rabbitmq/mnesia" ] || [ -z "$(ls -A /var/lib/rabbitmq/mnesia
     for script in /docker-entrypoint-initdb.d/*.sh; do
       if [ -f "$script" ]; then
         echo "Running $script..."
-        bash "$script"
+        sh "$script"
       fi
     done
     
