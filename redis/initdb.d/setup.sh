@@ -10,13 +10,6 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Create ACL file with initial config if it doesn't exist
-if [ ! -f /data/users.acl ]; then
-    cat > /data/users.acl <<'ACL_EOF'
-user default on nopass ~* +@all
-ACL_EOF
-fi
-
 # Create Redis users for gRPC Auth, User and Movies Service
 echo "Creating Redis users..."
 
@@ -32,15 +25,9 @@ echo "${GREEN}✓ User service created successfully!${NC}"
 redis-cli ACL SETUSER "${REDIS_MOVIES_USER}" on ">${REDIS_MOVIES_PASSWORD}" "~*" "&${REDIS_TOKENS_DB}" "+@read"
 echo "${GREEN}✓ Movies service created successfully!${NC}"
 
-# SAVE FIRST - while default user is still enabled
-redis-cli ACL SAVE
+# Save again with root authentication
+redis-cli -a "${REDIS_DEFAULT_PASSWORD}" --no-auth-warning ACL SAVE
 echo "Users saved to ACL file."
-
-# NOW disable default user
-redis-cli ACL SETUSER default off
-
-# Save again with authentication
-redis-cli --user "${REDIS_AUTH_USER}" -a "${REDIS_AUTH_PASSWORD}" --no-auth-warning ACL SAVE
 
 echo "Users created successfully!"
 

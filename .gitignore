@@ -48,3 +48,5 @@ kurrentdb-setup/certs/
 # JWT keys directory
 jwt/keys/
 
+# SQL copied files to initdb.d
+postgres/initdb.d/sql

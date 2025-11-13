@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 echo "=========================================="
@@ -17,21 +17,22 @@ psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" <<-EOSQL
     CREATE DATABASE "$POSTGRES_AUTH_DB_NAME" OWNER "$POSTGRES_AUTH_DB_USER";
     GRANT ALL PRIVILEGES ON DATABASE "$POSTGRES_AUTH_DB_NAME" TO "$POSTGRES_AUTH_DB_USER";
 EOSQL
-echo "${GREEN}✓ Auth database and user created successfully!${NC}"
+echo -e "${GREEN}✓ Auth database and user created successfully!${NC}"
 
 # Run the schema for the specific database
-psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -f /docker-entrypoint-initdb.d/sql/auth_create_tables.sql
-psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -f /docker-entrypoint-initdb.d/sql/auth_create_functions.sql
-psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -f /docker-entrypoint-initdb.d/sql/auth_create_stored_procedures.sql
-echo "${GREEN}✓ Auth database schema created successfully!${NC}"
+for file in "./docker-entrypoint-initdb.d/sql/auth_"*.sql; do
+    echo "Found SQL file: $file"
+    psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -f "$file"
+    echo -e "${GREEN}✓ Executed $file successfully!${NC}"
+done
 
 # Ensure the user has privileges on all tables in the public schema
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"$POSTGRES_AUTH_DB_USER\";"
-echo "${GREEN}✓ Granted privileges on all tables in auth database!${NC}"
+echo -e "${GREEN}✓ Granted privileges on all tables in auth database!${NC}"
 
 # Ensure the user has privileges on all sequences in the public schema
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"$POSTGRES_AUTH_DB_USER\";"
-echo "${GREEN}✓ Granted privileges on all sequences in auth database!${NC}"
+echo -e "${GREEN}✓ Granted privileges on all sequences in auth database!${NC}"
 
 # Create Recipes DB and User
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" <<-EOSQL
@@ -39,21 +40,22 @@ psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" <<-EOSQL
     CREATE DATABASE "$POSTGRES_USER_DB_NAME" OWNER "$POSTGRES_USER_DB_USER";
     GRANT ALL PRIVILEGES ON DATABASE "$POSTGRES_USER_DB_NAME" TO "$POSTGRES_USER_DB_USER";
 EOSQL
-echo "${GREEN}✓ User database and user created successfully!${NC}"
+echo -e "${GREEN}✓ User database and user created successfully!${NC}"
 
 # Run the schema for the specific database
-psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -f /docker-entrypoint-initdb.d/sql/user_create_tables.sql
-psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -f /docker-entrypoint-initdb.d/sql/user_create_functions.sql
-psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -f /docker-entrypoint-initdb.d/sql/user_create_stored_procedures.sql
-echo "${GREEN}✓ User database schema created successfully!${NC}"
+for file in "./docker-entrypoint-initdb.d/sql/user_"*.sql; do
+    echo "Found SQL file: $file"
+    psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -f "$file"
+    echo -e "${GREEN}✓ Executed $file successfully!${NC}"
+done
 
 # Ensure the user has privileges on all tables in the public schema
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"$POSTGRES_USER_DB_USER\";"
-echo "${GREEN}✓ Granted privileges on all tables in user database!${NC}"
+echo -e "${GREEN}✓ Granted privileges on all tables in user database!${NC}"
 
 # Ensure the user has privileges on all sequences in the public schema
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"$POSTGRES_USER_DB_USER\";"
-echo "${GREEN}✓ Granted privileges on all sequences in user database!${NC}"
+echo -e "${GREEN}✓ Granted privileges on all sequences in user database!${NC}"
 
 echo ""
 echo "=========================================="

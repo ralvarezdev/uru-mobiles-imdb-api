@@ -2,14 +2,17 @@
 set -e
 
 # Check if initialization is needed
-if [ ! -f /data/.initialized ]; then
+if [ -f /data/.initialized ]; then
+    echo "Already initialized, skipping init scripts..."
+else
     echo "First run detected, initializing..."
     
-    # Create initial ACL file if it doesn't exist
+    # Create ACL file with initial config if it doesn't exist
     if [ ! -f /data/users.acl ]; then
-        cat > /data/users.acl <<'ACL_EOF'
-user default on nopass ~* +@all
+        cat > /data/users.acl <<ACL_EOF
+user default on >${REDIS_DEFAULT_PASSWORD} ~* +@all
 ACL_EOF
+        echo "Created initial ACL file with default user."
     fi
     
     # Start Redis in background WITH ACL file configured
@@ -34,15 +37,13 @@ ACL_EOF
     echo "Initialization complete"
     
     # Stop background Redis
-    redis-cli --user "${REDIS_AUTH_USER}" -a "${REDIS_AUTH_PASSWORD}" --no-auth-warning shutdown nosave
+    redis-cli -a "${REDIS_DEFAULT_PASSWORD}" --no-auth-warning shutdown nosave
     
     # Wait for shutdown
     sleep 2
     
     # Create flag file
     touch /data/.initialized
-else
-    echo "Already initialized, skipping init scripts..."
 fi
 
 # Start Redis normally with ACL file

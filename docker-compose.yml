@@ -17,6 +17,9 @@ services:
     environment:
       # General Configuration
       MODE: ${INTERNAL_MAILER_MODE}
+      
+      # Server Configuration
+      PORT: 50051
 
       # MailerSend Configuration
       MAILERSEND_DOMAIN: ${INTERNAL_MAILER_MAILERSEND_DOMAIN}
@@ -51,11 +54,16 @@ services:
   auth:
     build:
       context: ./auth
+      secrets:
+        - GITHUB_TOKEN
     hostname: auth
     ports:
       - "9001:50051" # Auth Service
       - "9102:50052" # Internal Auth Service
     environment:
+      # Mode
+      MODE: ${AUTH_MODE}
+      
       # Admin credentials
       ADMIN_USERNAME: ${AUTH_ADMIN_USERNAME}
       ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL}
@@ -71,19 +79,17 @@ services:
       RESET_PASSWORD_URL: ${AUTH_RESET_PASSWORD_URL}
       
       # Postgres Connection
-      POSTGRES_DSN: postgres://${POSTGRES_AUTH_DB_USER}:${POSTGRES_AUTH_DB_PASSWORD}@postgres:5432/${POSTGRES_AUTH_DB_NAME}?sslmode=disable
+      POSTGRES_DSN: postgres://${POSTGRES_AUTH_DB_USER}:${POSTGRES_AUTH_DB_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_AUTH_DB_NAME}?sslmode=disable
       POSTGRES_MAX_IDLE_CONNECTIONS: ${AUTH_POSTGRES_MAX_IDLE_CONNECTIONS}
       POSTGRES_MAX_OPEN_CONNECTIONS: ${AUTH_POSTGRES_MAX_OPEN_CONNECTIONS}
 
       # Redis Connection
       REDIS_ADDRESS: redis:6379
-      REDIS_USER: ${REDIS_AUTH_USER}
+      REDIS_USERNAME: ${REDIS_AUTH_USER}
       REDIS_PASSWORD: ${REDIS_AUTH_PASSWORD}
       REDIS_DB: ${REDIS_TOKENS_DB}
       
       # JWT configuration
-      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
-      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       JWT_ISSUER: ${DOMAIN}
       ACCESS_TOKEN_DURATION: ${ACCESS_TOKEN_DURATION}
       REFRESH_TOKEN_DURATION: ${REFRESH_TOKEN_DURATION}
@@ -123,6 +129,9 @@ services:
       MAXIMUM_FAILED_ATTEMPTS_COUNT: ${AUTH_MAXIMUM_FAILED_ATTEMPTS_COUNT}
       MAXIMUM_FAILED_ATTEMPTS_PERIOD: ${AUTH_MAXIMUM_FAILED_ATTEMPTS_PERIOD}
     restart: on-failure
+    volumes:
+      - ./jwt/keys/private_key.pem:/app/config/private_key.pem:ro
+      - ./jwt/keys/public_key.pem:/app/config/public_key.pem:ro
     networks:
       - app-network
     depends_on:
@@ -136,29 +145,33 @@ services:
   user:
     build:
       context: ./user
+      secrets:
+        - GITHUB_TOKEN
     hostname: user
     ports:
       - "9002:50051"
     environment:
+      # Mode
+      MODE: ${USER_MODE}
+      
       # Server configuration
       PORT: 50051
-      AUTH_ADDRESS: auth:50051
-      INTERNAL_AUTH_ADDRESS: auth:50052
+      AUTH_SERVICE_ADDRESS: auth:50051
+      INTERNAL_AUTH_SERVICE_ADDRESS: auth:50052
       
       # Postgres Connection
-      POSTGRES_DSN: postgres://${POSTGRES_USER_DB_USER}:${POSTGRES_USER_DB_PASSWORD}@postgres:5432/${POSTGRES_USER_DB_NAME}?sslmode=disable
+      POSTGRES_DSN: postgres://${POSTGRES_USER_DB_USER}:${POSTGRES_USER_DB_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_USER_DB_NAME}?sslmode=disable
       POSTGRES_MAX_IDLE_CONNECTIONS: ${USER_POSTGRES_MAX_IDLE_CONNECTIONS}
       POSTGRES_MAX_OPEN_CONNECTIONS: ${USER_POSTGRES_MAX_OPEN_CONNECTIONS}
       
       # Redis configuration
       REDIS_ADDRESS: redis:6379
-      REDIS_USER: ${REDIS_USER_USER}
+      REDIS_USERNAME: ${REDIS_USER_USER}
       REDIS_PASSWORD: ${REDIS_USER_PASSWORD}
       REDIS_DB: ${REDIS_TOKENS_DB}
-  
-      # JWT configuration
-      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
     restart: on-failure
+    volumes:
+      - ./jwt/keys/public_key.pem:/app/config/public_key.pem:ro
     networks:
       - app-network
     depends_on:

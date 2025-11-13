@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Create the JWT keys directory if it doesn't exist
 mkdir -p ./jwt/keys
