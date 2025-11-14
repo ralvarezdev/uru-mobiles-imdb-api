@@ -230,54 +230,6 @@ services:
     networks:
       - app-network
 
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    environment:
-      # Root User
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-
-      # Databases
-      INTERNAL_FILE_STORAGE_MONGODB_DB: ${INTERNAL_FILE_STORAGE_MONGODB_DB}
-      MOVIES_MONGODB_DB: ${MOVIES_MONGODB_DB}
-
-      # Users
-      INTERNAL_FILE_STORAGE_MONGODB_USERNAME: ${INTERNAL_FILE_STORAGE_MONGODB_USERNAME}
-      MOVIES_MONGODB_USERNAME: ${MOVIES_MONGODB_USERNAME}
-
-      # Passwords
-      INTERNAL_FILE_STORAGE_MONGODB_PASSWORD: ${INTERNAL_FILE_STORAGE_MONGODB_PASSWORD}
-      MOVIES_MONGODB_PASSWORD: ${MOVIES_MONGODB_PASSWORD}
-    ulimits:
-      nofile:
-        soft: 64000
-        hard: 64000
-    command: ["mongod", "--config", "/etc/mongod.conf"]
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "mongo",
-          "--username",
-          "${MONGO_INITDB_ROOT_USERNAME}",
-          "--password",
-          "${MONGO_INITDB_ROOT_PASSWORD}",
-          "--eval",
-          "db.adminCommand('ping')",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - mongodb-data:/data/db
-      - ./mongodb/initdb.d:/docker-entrypoint-initdb.d:ro
-      - ./mongodb/config/mongod.conf:/etc/mongod.conf:ro
-    networks:
-      - app-network
-
   redis:
     image: redis:latest
     hostname: redis
@@ -369,77 +321,14 @@ services:
     networks:
       - app-network
 
-  kurrentdb:
-    build:
-      context: ./kurrentdb
-      args:
-        BASE_TAG: ${KDB_ARCH_TAG} # experimental-arm64v8 for ARM64, latest for x86_64
-    hostname: kurrentdb
-    ports:
-      - "2113:2113" # Default client port (gRPC and HTTP Admin UI)
-    environment:
-      # Logging, not sure if this is the correct variable
-      KURRENTDB_LOG_LEVEL: Warning 
-      
-      # Admin Credentials
-      KURRENTDB_DEFAULT_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
-    command: [
-        # "${KURRENTDB_INSECURE}",
-        "--certificate-file=/certs/node.crt",
-        "--certificate-private-key-file=/certs/node.key",
-        "--run-projections=All", # Enable projections
-        "--start-standard-projections", # Start standard projections
-        "--enable-atom-pub-over-http", # Enable HTTP API
-        "--cluster-size=1", # Single node cluster
-      ]
-    volumes:
-      - kurrentdb-data:/var/lib/kurrentdb/
-      - kurrentdb-logs:/var/log/kurrentdb/
-      - ./kurrentdb/certs:/certs:ro
-    networks:
-      - app-network
-
-  kurrentdb-setup:
-    build:
-      context: ./kurrentdb-setup
-    depends_on:
-      kurrentdb:
-        condition: service_healthy
-    environment:
-      # Connection
-      KURRENTDB_SCHEME: https
-      KURRENTDB_HOST: kurrentdb
-      KURRENTDB_PORT: 2113
-      KURRENTDB_ADMIN_USERNAME: ${KURRENTDB_ADMIN_USERNAME}
-      KURRENTDB_ADMIN_PASSWORD: ${KURRENTDB_ADMIN_PASSWORD}
-      CURL_OPTS: "-k"
-
-      # Usernames
-      KURRENTDB_AUTH_USERNAME: ${KURRENTDB_AUTH_USERNAME}
-      KURRENTDB_MOVIES_USERNAME: ${KURRENTDB_MOVIES_USERNAME}
-
-      # Passwords
-      KURRENTDB_AUTH_PASSWORD: ${KURRENTDB_AUTH_PASSWORD}
-      KURRENTDB_MOVIES_PASSWORD: ${KURRENTDB_MOVIES_PASSWORD}
-
-      # Stream Names
-      KURRENTDB_USERNAMES_STREAM: ${KURRENTDB_USERNAMES_STREAM}
-    volumes:
-      - ./kurrentdb-setup/initdb.d:/docker-entrypoint-initdb.d:ro
-    networks:
-      - app-network
-
 secrets:
   GITHUB_TOKEN:
     file: ./.github_token
 
 volumes:
   postgres-data:
-  mongodb-data:
   redis-data:
   rabbitmq-data:
-  kurrentdb-data:
-  kurrentdb-logs:
 
 networks:
   app-network:
