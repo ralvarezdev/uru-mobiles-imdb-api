@@ -1,6 +1,4 @@
-[submodule "api.ralvarez.dev"]
-	path = api.ralvarez.dev
-	url = https://github.com/ralvarezdev/api.ralvarez.dev
+
 [submodule "internal-mailer"]
 	path = internal-mailer
 	url = https://github.com/ralvarezdev/connect-internal-mailer
@@ -10,3 +8,6 @@
 [submodule "user"]
 	path = user
 	url = https://github.com/ralvarezdev/connect-user
+[submodule "api.ralvarez.app"]
+	path = api.ralvarez.app
+	url = https://github.com/ralvarezdev/api.ralvarez.app

@@ -1,8 +1,8 @@
 services:
-  api-ralvarez-dev:
+  api-ralvarez-app:
     build:
-      context: ./api.ralvarez.dev
-    hostname: api-ralvarez-dev
+      context: ./api.ralvarez.app
+    hostname: api-ralvarez-app
     ports:
       - "9000:80" # Nginx HTTP
 
