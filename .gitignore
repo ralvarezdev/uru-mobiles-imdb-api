@@ -50,3 +50,6 @@ jwt/keys/
 
 # SQL copied files to initdb.d
 postgres/initdb.d/sql
+
+# Cloudflared config.yml
+cloudflared/config.yml

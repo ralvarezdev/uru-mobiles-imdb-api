@@ -1,0 +1,34 @@
+tunnel: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+credentials-file: /home/user/.cloudflared/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.json
+
+ingress:
+  - hostname: api.example.org
+    service: http://localhost:9000
+  - hostname: auth.example.org
+    service: http://localhost:9001
+  - hostname: auth2.example.org
+    service: http://localhost:9002
+    originRequest:
+      http2Origin: true
+      noTLSVerify: true
+      readTimeout: 3600s
+      writeTimeout: 3600s
+  - hostname: user.example.org
+    service: http://localhost:9003
+  - hostname: user2.example.org
+    service: http://localhost:9004
+    originRequest:
+      http2Origin: true
+      noTLSVerify: true
+      readTimeout: 3600s
+      writeTimeout: 3600s
+  - hostname: movies.example.org
+    service: http://localhost:9005
+  - hostname: movies2.example.org
+    service: http://localhost:9006
+    originRequest:
+      http2Origin: true
+      noTLSVerify: true
+      readTimeout: 3600s
+      writeTimeout: 3600s
+  - service: http_status:404
