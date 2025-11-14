@@ -18,7 +18,7 @@ ACL_EOF
     redis-server --daemonize yes --protected-mode no --aclfile /data/users.acl
     
     # Wait for Redis to be ready
-    until (echo "AUTH ${REDIS_DEFAULT_PASSWORD}"; echo "PING") | redis-cli --no-auth-warning >/dev/null 2>&1; do
+    until redis-cli -a "${REDIS_DEFAULT_PASSWORD}" --no-auth-warning PING | grep -q PONG; do
       echo "Waiting for Redis..."
       sleep 1
     done
