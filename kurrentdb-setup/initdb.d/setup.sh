@@ -18,12 +18,12 @@ NC='\033[0m'
 echo "Waiting for KurrentDB to be ready..."
 for i in $(seq 1 $MAX_RETRIES); do
     if curl $CURL_OPTS -sf -u "$KURRENTDB_ADMIN_USERNAME:$KURRENTDB_ADMIN_PASSWORD" "$KURRENTDB_SCHEME://$KURRENTDB_HOST:$KURRENTDB_PORT/gossip" > /dev/null 2>&1; then
-        echo "${GREEN}✓ KurrentDB is ready!${NC}"
+        echo -e "${GREEN}✓ KurrentDB is ready!${NC}"
         break
     fi
     
     if [ $i -eq $MAX_RETRIES ]; then
-        echo "${RED}✗ ERROR: KurrentDB did not become ready in time${NC}"
+        echo -e "${RED}✗ ERROR: KurrentDB did not become ready in time${NC}"
         exit 1
     fi
     
@@ -63,11 +63,11 @@ create_user() {
     local http_code=$(echo "$response" | tail -n1)
     
     if [ "$http_code" = "201" ]; then
-        echo "${GREEN}✓ Created${NC}"
+        echo -e "${GREEN}✓ Created${NC}"
     elif [ "$http_code" = "409" ]; then
-        echo "${YELLOW}⚠ Already exists${NC}"
+        echo -e "${YELLOW}⚠ Already exists${NC}"
     else
-        echo "${RED}✗ Failed (HTTP $http_code)${NC}"
+        echo -e "${RED}✗ Failed (HTTP $http_code)${NC}"
     fi
 }
 
@@ -102,7 +102,7 @@ set_stream_acl() {
     # Create stream first
     echo -n "  Creating stream... "
     create_stream "$stream"
-    echo "${GREEN}✓${NC}"
+    echo -e "${GREEN}✓${NC}"
     
     echo -n "  Setting ACL... "
     
@@ -146,10 +146,10 @@ set_stream_acl() {
     local response_body=$(echo "$response" | head -n -1)
     
     if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
-        echo "  ${GREEN}✓ Set${NC}"
+        echo -e "  ${GREEN}✓ Set${NC}"
     else
-        echo "  ${RED}✗ Failed (HTTP $http_code)${NC}"
-        echo "  ${RED}Response: $response_body${NC}"
+        echo -e "  ${RED}✗ Failed (HTTP $http_code)${NC}"
+        echo -e "  ${RED}Response: $response_body${NC}"
     fi
 }
 
@@ -194,10 +194,10 @@ set_default_acls() {
     local response_body=$(echo "$response" | head -n -1)
     
     if [ "$http_code" = "201" ] || [ "$http_code" = "200" ]; then
-        echo "${GREEN}✓ Set${NC}"
+        echo -e "${GREEN}✓ Set${NC}"
     else
-        echo "${RED}✗ Failed (HTTP $http_code)${NC}"
-        echo "${RED}Response: $response_body${NC}"
+        echo -e "${RED}✗ Failed (HTTP $http_code)${NC}"
+        echo -e "${RED}Response: $response_body${NC}"
     fi
 }
 
@@ -240,7 +240,7 @@ set_default_acls
 
 echo ""
 echo "=========================================="
-echo "${GREEN}KurrentDB Setup: Complete!${NC}"
+echo -e "${GREEN}KurrentDB Setup: Complete!${NC}"
 echo "=========================================="
 echo ""
 echo "Configured Services:"
