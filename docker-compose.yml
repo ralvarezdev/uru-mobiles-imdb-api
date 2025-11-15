@@ -230,6 +230,14 @@ services:
       
       # TMDB API key
       TMDB_API_KEY: ${MOVIES_TMDB_API_KEY}
+      
+      # TMDB Image sizes
+      TMDB_CAST_MEMBER_PROFILE_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_CAST_MEMBER_PROFILE_IMAGE_WIDTH_SIZE}
+      TMDB_CREW_MEMBER_PROFILE_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_CREW_MEMBER_PROFILE_IMAGE_WIDTH_SIZE}
+      TMDB_SIMPLE_MOVIE_POSTER_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_SIMPLE_MOVIE_POSTER_IMAGE_WIDTH_SIZE}
+      TMDB_PRODUCTION_COMPANY_LOGO_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_PRODUCTION_COMPANY_LOGO_IMAGE_WIDTH_SIZE}
+      TMDB_MOVIE_DETAILS_POSTER_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_MOVIE_DETAILS_POSTER_IMAGE_WIDTH_SIZE}
+      TMDB_AVATAR_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_AVATAR_IMAGE_WIDTH_SIZE}
     restart: on-failure
     volumes:
       - ./jwt/keys/public_key.pem:/app/config/public_key.pem:ro
@@ -280,6 +288,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+      start_period: 120s # Allow time for DB and users to be created
     networks:
       - app-network
 
@@ -325,7 +334,8 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 6
+      start_period: 60s # Allow time for Redis to initialize
     networks:
       - app-network
 
@@ -369,8 +379,8 @@ services:
       test: rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity
       interval: 10s
       timeout: 10s
-      retries: 5
-      start_period: 40s
+      retries: 6
+      start_period: 120s # Allow time for RabbitMQ to initialize
     networks:
       - app-network
 
