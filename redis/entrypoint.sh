@@ -36,7 +36,7 @@ ACL_EOF
     echo "Initialization complete"
     
     # Stop background Redis
-    redis-cli -a "${REDIS_DEFAULT_PASSWORD}" --no-auth-warning shutdown nosave
+    redis-cli -a "${REDIS_DEFAULT_PASSWORD}" --no-auth-warning shutdown
     
     # Wait for shutdown
     sleep 2
