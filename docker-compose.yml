@@ -44,6 +44,12 @@ services:
       # RabbitMQ mails exchange
       RABBITMQ_MAILS_EXCHANGE_NAME: ${RABBITMQ_MAILS_EXCHANGE_NAME}
       
+      # RabbitMQ queue names
+      RABBITMQ_WELCOME_EMAILS_QUEUE: ${RABBITMQ_MAILS_WELCOME_EMAILS_QUEUE}
+      RABBITMQ_RESET_PASSWORD_EMAILS_QUEUE: ${RABBITMQ_MAILS_RESET_PASSWORD_EMAILS_QUEUE}
+      RABBITMQ_VERIFICATION_EMAILS_QUEUE: ${RABBITMQ_MAILS_VERIFICATION_EMAILS_QUEUE}
+      RABBITMQ_2FA_EMAIL_CODE_QUEUE: ${RABBITMQ_MAILS_2FA_EMAIL_CODE_QUEUE}
+      
       # RabbitMQ routing keys
       RABBITMQ_WELCOME_EMAILS_ROUTING_KEY: ${RABBITMQ_WELCOME_EMAILS_ROUTING_KEY}
       RABBITMQ_RESET_PASSWORD_EMAILS_ROUTING_KEY: ${RABBITMQ_RESET_PASSWORD_EMAILS_ROUTING_KEY}
@@ -192,6 +198,50 @@ services:
         condition: service_healthy
       auth:
         condition: service_started
+        
+  movies:
+    build:
+      context: ./movies
+      secrets:
+        - GITHUB_TOKEN
+    hostname: movies
+    ports:
+      - "9005:8080" # HTTP Movies Service
+      - "9006:50051" # gRPC Movies Service
+    environment:
+      # Mode
+      MODE: ${MOVIES_MODE}
+      
+      # Server configuration
+      HTTP_PORT: 8080
+      GRPC_PORT: 50051
+      AUTH_SERVICE_ADDRESS: http://auth:50051
+      
+      # Postgres Connection
+      POSTGRES_DSN: postgres://${POSTGRES_MOVIES_DB_USER}:${POSTGRES_MOVIES_DB_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_MOVIES_DB_NAME}?sslmode=disable
+      POSTGRES_MAX_IDLE_CONNECTIONS: ${MOVIES_POSTGRES_MAX_IDLE_CONNECTIONS}
+      POSTGRES_MAX_OPEN_CONNECTIONS: ${MOVIES_POSTGRES_MAX_OPEN_CONNECTIONS}
+      
+      # Redis configuration
+      REDIS_ADDRESS: redis:6379
+      REDIS_USERNAME: ${REDIS_MOVIES_USER}
+      REDIS_PASSWORD: ${REDIS_MOVIES_PASSWORD}
+      REDIS_DB: ${REDIS_TOKENS_DB}
+      
+      # TMDB API key
+      TMDB_API_KEY: ${MOVIES_TMDB_API_KEY}
+    restart: on-failure
+    volumes:
+      - ./jwt/keys/public_key.pem:/app/config/public_key.pem:ro
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      auth:
+        condition: service_started
 
   postgres:
     image: postgres:latest
@@ -210,14 +260,17 @@ services:
       # Databases
       POSTGRES_AUTH_DB_NAME: ${POSTGRES_AUTH_DB_NAME}
       POSTGRES_USER_DB_NAME: ${POSTGRES_USER_DB_NAME}
+      POSTGRES_MOVIES_DB_NAME: ${POSTGRES_MOVIES_DB_NAME}
 
       # Users
       POSTGRES_AUTH_DB_USER: ${POSTGRES_AUTH_DB_USER}
       POSTGRES_USER_DB_USER: ${POSTGRES_USER_DB_USER}
+      POSTGRES_MOVIES_DB_USER: ${POSTGRES_MOVIES_DB_USER}
 
       # Passwords
       POSTGRES_AUTH_DB_PASSWORD: ${POSTGRES_AUTH_DB_PASSWORD}
       POSTGRES_USER_DB_PASSWORD: ${POSTGRES_USER_DB_PASSWORD}
+      POSTGRES_MOVIES_DB_PASSWORD: ${POSTGRES_MOVIES_DB_PASSWORD}
     healthcheck:
       test:
         [
@@ -300,17 +353,17 @@ services:
 
       # Users
       RABBITMQ_AUTH_USER: ${RABBITMQ_AUTH_USER}
-      RABBITMQ_MOVIES_USER: ${RABBITMQ_MOVIES_USER}
       RABBITMQ_INTERNAL_MAILER_USER: ${RABBITMQ_INTERNAL_MAILER_USER}
 
       # Passwords
       RABBITMQ_AUTH_PASSWORD: ${RABBITMQ_AUTH_PASSWORD}
-      RABBITMQ_MOVIES_PASSWORD: ${RABBITMQ_MOVIES_PASSWORD}
       RABBITMQ_INTERNAL_MAILER_PASSWORD: ${RABBITMQ_INTERNAL_MAILER_PASSWORD}
 
       # Exchanges
-      RABBITMQ_USERNAMES_EXCHANGE_NAME: ${RABBITMQ_USERNAMES_EXCHANGE_NAME}
       RABBITMQ_MAILS_EXCHANGE_NAME: ${RABBITMQ_MAILS_EXCHANGE_NAME}
+      
+      # Mails queues
+      RABBITMQ_MAILS_QUEUES: ${RABBITMQ_MAILS_QUEUES}
     entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
     healthcheck:
       test: rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity

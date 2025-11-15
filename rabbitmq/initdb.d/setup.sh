@@ -15,19 +15,13 @@ echo "${YELLOW}Creating RabbitMQ users...${NC}"
 # Create RabbitMQ user for gRPC Auth Service
 rabbitmqctl add_user "${RABBITMQ_AUTH_USER}" "${RABBITMQ_AUTH_PASSWORD}" || true
 rabbitmqctl set_user_tags "${RABBITMQ_AUTH_USER}" auth
-rabbitmqctl set_permissions -p "${RABBITMQ_DEFAULT_VHOST}" "${RABBITMQ_AUTH_USER}" "^(${RABBITMQ_USERNAMES_EXCHANGE_NAME}|${RABBITMQ_MAILS_EXCHANGE_NAME}$)$" "^(${RABBITMQ_USERNAMES_EXCHANGE_NAME}|${RABBITMQ_MAILS_EXCHANGE_NAME}$)$" "^$"
+rabbitmqctl set_permissions -p "${RABBITMQ_DEFAULT_VHOST}" "${RABBITMQ_AUTH_USER}" "^${RABBITMQ_MAILS_EXCHANGE_NAME}$" "^${RABBITMQ_MAILS_EXCHANGE_NAME}$" "^$"
 echo "${GREEN}✓ Auth user created successfully!${NC}"
-
-# Create RabbitMQ user for gRPC Movies Service
-rabbitmqctl add_user "${RABBITMQ_MOVIES_USER}" "${RABBITMQ_MOVIES_PASSWORD}" || true
-rabbitmqctl set_user_tags "${RABBITMQ_MOVIES_USER}" movies
-rabbitmqctl set_permissions -p "${RABBITMQ_DEFAULT_VHOST}" "${RABBITMQ_MOVIES_USER}" "^${RABBITMQ_USERNAMES_EXCHANGE_NAME}$" "^$" "^${RABBITMQ_USERNAMES_EXCHANGE_NAME}$"
-echo "${GREEN}✓ Movies user created successfully!${NC}"
 
 # Create RabbitMQ user for gRPC Mailer Service
 rabbitmqctl add_user "${RABBITMQ_INTERNAL_MAILER_USER}" "${RABBITMQ_INTERNAL_MAILER_PASSWORD}" || true
 rabbitmqctl set_user_tags "${RABBITMQ_INTERNAL_MAILER_USER}" internal_mailer
-rabbitmqctl set_permissions -p "${RABBITMQ_DEFAULT_VHOST}" "${RABBITMQ_INTERNAL_MAILER_USER}" "^${RABBITMQ_MAILS_EXCHANGE_NAME}$" "^$" "^${RABBITMQ_MAILS_EXCHANGE_NAME}$"
+rabbitmqctl set_permissions -p "${RABBITMQ_DEFAULT_VHOST}" "${RABBITMQ_INTERNAL_MAILER_USER}" "^(${RABBITMQ_MAILS_EXCHANGE_NAME}|${RABBITMQ_MAILS_QUEUES}.*)$" "^(${RABBITMQ_MAILS_EXCHANGE_NAME}|${RABBITMQ_MAILS_QUEUES}.*)$" "^${RABBITMQ_MAILS_QUEUES}.*$"
 echo "${GREEN}✓ Internal Mailer user created successfully!${NC}"
 
 echo ""

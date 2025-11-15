@@ -11,3 +11,6 @@
 [submodule "api.ralvarez.app"]
 	path = api.ralvarez.app
 	url = https://github.com/ralvarezdev/api.ralvarez.app
+[submodule "movies"]
+	path = movies
+	url = https://github.com/ralvarezdev/connect-movies
