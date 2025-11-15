@@ -19,11 +19,16 @@ EOSQL
 echo -e "${GREEN}✓ Auth database and user created successfully!${NC}"
 
 # Run the schema for the specific database
-for file in "./docker-entrypoint-initdb.d/sql/auth_"*.sql; do
+files=(./docker-entrypoint-initdb.d/sql/auth_*.sql)
+if [ -e "${files[0]}" ]; then
+  for file in "${files[@]}"; do
     echo "Found SQL file: $file"
     psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -f "$file"
     echo -e "${GREEN}✓ Executed $file successfully!${NC}"
-done
+  done
+else
+  echo "No SQL files found matching pattern."
+fi
 
 # Ensure the user has privileges on all tables in the public schema
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_AUTH_DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"$POSTGRES_AUTH_DB_USER\";"
@@ -42,11 +47,16 @@ EOSQL
 echo -e "${GREEN}✓ User database and user created successfully!${NC}"
 
 # Run the schema for the specific database
-for file in "./docker-entrypoint-initdb.d/sql/user_"*.sql; do
+files=(./docker-entrypoint-initdb.d/sql/user_*.sql)
+if [ -e "${files[0]}" ]; then
+  for file in "${files[@]}"; do
     echo "Found SQL file: $file"
     psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -f "$file"
     echo -e "${GREEN}✓ Executed $file successfully!${NC}"
-done
+  done
+else
+  echo "No SQL files found matching pattern."
+fi
 
 # Ensure the user has privileges on all tables in the public schema
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_USER_DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"$POSTGRES_USER_DB_USER\";"
@@ -65,11 +75,16 @@ EOSQL
 echo -e "${GREEN}✓ Movies database and user created successfully!${NC}"
 
 # Run the schema for the specific database
-for file in "./docker-entrypoint-initdb.d/sql/movies_"*.sql; do
+files=(./docker-entrypoint-initdb.d/sql/movies_*.sql)
+if [ -e "${files[0]}" ]; then
+  for file in "${files[@]}"; do
     echo "Found SQL file: $file"
     psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_MOVIES_DB_NAME" -f "$file"
     echo -e "${GREEN}✓ Executed $file successfully!${NC}"
-done    
+  done
+else
+  echo "No SQL files found matching pattern."
+fi
 
 # Ensure the user has privileges on all tables in the public schema
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_SUPERUSER_NAME" -d "$POSTGRES_MOVIES_DB_NAME" -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"$POSTGRES_MOVIES_DB_USER\";"
