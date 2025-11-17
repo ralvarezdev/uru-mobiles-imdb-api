@@ -507,7 +507,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./loki/loki-config.yml:/etc/loki/loki-config.yml
-      - loki-delete-requests:/loki/delete-requests
       - loki-data:/loki
     command: -config.file=/etc/loki/loki-config.yml
     networks:
@@ -541,6 +540,7 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_SERVER_ROOT_URL: ${GRAFANA_SERVER_ROOT_URL}
+      GF_SERVER_DOMAIN: ${GRAFANA_SERVER_DOMAIN}
       GF_USERS_ALLOW_SIGN_UP: ${GRAFANA_USERS_ALLOW_SIGN_UP}
     networks:
       - monitoring
@@ -558,7 +558,6 @@ volumes:
   rabbitmq-data: {}
   grafana-data: {}
   prometheus-data: {}
-  loki-delete-requests: {}
   loki-data: {}
 
 networks:
