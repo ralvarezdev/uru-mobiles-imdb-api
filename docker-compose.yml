@@ -2,6 +2,14 @@ services:
   api-ralvarez-app:
     build:
       context: ./api.ralvarez.app
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
     hostname: api-ralvarez-app
     ports:
       - "9000:80" # Nginx HTTP
@@ -11,6 +19,14 @@ services:
       context: ./internal-mailer
       secrets:
         - GITHUB_TOKEN
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     hostname: internal-mailer
     ports:
       - "9100:8080" # HTTP Internal Mailer Service
@@ -18,7 +34,7 @@ services:
     environment:
       # General Configuration
       MODE: ${INTERNAL_MAILER_MODE}
-      
+
       # MailerSend Configuration
       MAILERSEND_DOMAIN: ${INTERNAL_MAILER_MAILERSEND_DOMAIN}
       MAILERSEND_NAME: ${INTERNAL_MAILER_MAILERSEND_NAME}
@@ -33,19 +49,19 @@ services:
 
       # Selected Mailer
       MAILER: ${INTERNAL_MAILER_MAILER}
-      
+
       # RabbitMQ Configuration
       RABBITMQ_URL: amqp://${RABBITMQ_INTERNAL_MAILER_USER}:${RABBITMQ_INTERNAL_MAILER_PASSWORD_ENCODED}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST}
-    
+
       # RabbitMQ mails exchange
       RABBITMQ_MAILS_EXCHANGE_NAME: ${RABBITMQ_MAILS_EXCHANGE_NAME}
-      
+
       # RabbitMQ queue names
       RABBITMQ_WELCOME_EMAILS_QUEUE: ${RABBITMQ_MAILS_WELCOME_EMAILS_QUEUE}
       RABBITMQ_RESET_PASSWORD_EMAILS_QUEUE: ${RABBITMQ_MAILS_RESET_PASSWORD_EMAILS_QUEUE}
       RABBITMQ_VERIFICATION_EMAILS_QUEUE: ${RABBITMQ_MAILS_VERIFICATION_EMAILS_QUEUE}
       RABBITMQ_2FA_EMAIL_CODE_QUEUE: ${RABBITMQ_MAILS_2FA_EMAIL_CODE_QUEUE}
-      
+
       # RabbitMQ routing keys
       RABBITMQ_WELCOME_EMAILS_ROUTING_KEY: ${RABBITMQ_WELCOME_EMAILS_ROUTING_KEY}
       RABBITMQ_RESET_PASSWORD_EMAILS_ROUTING_KEY: ${RABBITMQ_RESET_PASSWORD_EMAILS_ROUTING_KEY}
@@ -57,12 +73,20 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      
+
   auth:
     build:
       context: ./auth
       secrets:
         - GITHUB_TOKEN
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 1.5G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     hostname: auth
     ports:
       - "9001:8080" # HTTP Auth Service
@@ -72,19 +96,19 @@ services:
     environment:
       # Mode
       MODE: ${AUTH_MODE}
-      
+
       # Admin credentials
       ADMIN_USERNAME: ${AUTH_ADMIN_USERNAME}
       ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL}
       ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD}
-      
+
       # Server configuration
       DOMAIN: ${DOMAIN}
-      
+
       # Web App configuration
       VERIFY_EMAIL_URL: ${AUTH_VERIFY_EMAIL_URL}
       RESET_PASSWORD_URL: ${AUTH_RESET_PASSWORD_URL}
-      
+
       # Postgres Connection
       POSTGRES_DSN: postgres://${POSTGRES_AUTH_DB_USER}:${POSTGRES_AUTH_DB_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_AUTH_DB_NAME}?sslmode=disable
       POSTGRES_MAX_IDLE_CONNECTIONS: ${AUTH_POSTGRES_MAX_IDLE_CONNECTIONS}
@@ -95,12 +119,12 @@ services:
       REDIS_USERNAME: ${REDIS_AUTH_USER}
       REDIS_PASSWORD: ${REDIS_AUTH_PASSWORD}
       REDIS_DB: ${REDIS_TOKENS_DB}
-      
+
       # JWT configuration
       JWT_ISSUER: ${DOMAIN}
       ACCESS_TOKEN_DURATION: ${ACCESS_TOKEN_DURATION}
       REFRESH_TOKEN_DURATION: ${REFRESH_TOKEN_DURATION}
-      
+
       # RabbitMQ configuration
       RABBITMQ_URL: amqp://${RABBITMQ_AUTH_USER}:${RABBITMQ_AUTH_PASSWORD_ENCODED}@rabbitmq:5672/${RABBITMQ_DEFAULT_VHOST}
       RABBITMQ_MAILS_EXCHANGE_NAME: ${RABBITMQ_MAILS_EXCHANGE_NAME}
@@ -111,11 +135,11 @@ services:
 
       # BCrypt configuration
       BCRYPT_COST: ${AUTH_BCRYPT_COST}
-      
+
       # 2FA Email configuration
       TWO_FA_EMAIL_CODE_DURATION: ${AUTH_TWO_FA_EMAIL_CODE_DURATION}
       TWO_FA_EMAIL_CODE_LENGTH: ${AUTH_TWO_FA_EMAIL_CODE_LENGTH}
-      
+
       # 2FA TOTP configuration
       TOTP_PERIOD: ${AUTH_TOTP_PERIOD}
       TOTP_DIGITS: ${AUTH_TOTP_DIGITS}
@@ -123,11 +147,11 @@ services:
       TOTP_RECOVERY_CODES_LENGTH: ${AUTH_TOTP_RECOVERY_CODES_LENGTH}
       TOTP_RECOVERY_CODES_COUNT: ${AUTH_TOTP_RECOVERY_CODES_COUNT}
       TOTP_ISSUER: ${DOMAIN}
-      
+
       # Token configuration
       EMAIL_VERIFICATION_TOKEN_DURATION: ${AUTH_EMAIL_VERIFICATION_TOKEN_DURATION}
       RESET_PASSWORD_TOKEN_DURATION: ${AUTH_RESET_PASSWORD_TOKEN_DURATION}
-      
+
       # Authentication configuration
       MINIMUM_PASSWORD_LENGTH: ${AUTH_MINIMUM_PASSWORD_LENGTH}
       MINIMUM_PASSWORD_SPECIAL_COUNT: ${AUTH_MINIMUM_PASSWORD_SPECIAL_COUNT}
@@ -148,12 +172,20 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      
+
   user:
     build:
       context: ./user
       secrets:
         - GITHUB_TOKEN
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     hostname: user
     ports:
       - "9003:8080" # HTTP User Service
@@ -161,16 +193,16 @@ services:
     environment:
       # Mode
       MODE: ${USER_MODE}
-      
+
       # Server configuration
       AUTH_SERVICE_ADDRESS: http://auth:50051
       INTERNAL_AUTH_SERVICE_ADDRESS: http://auth:50052
-      
+
       # Postgres Connection
       POSTGRES_DSN: postgres://${POSTGRES_USER_DB_USER}:${POSTGRES_USER_DB_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_USER_DB_NAME}?sslmode=disable
       POSTGRES_MAX_IDLE_CONNECTIONS: ${USER_POSTGRES_MAX_IDLE_CONNECTIONS}
       POSTGRES_MAX_OPEN_CONNECTIONS: ${USER_POSTGRES_MAX_OPEN_CONNECTIONS}
-      
+
       # Redis configuration
       REDIS_ADDRESS: redis:6379
       REDIS_USERNAME: ${REDIS_USER_USER}
@@ -188,12 +220,20 @@ services:
         condition: service_healthy
       auth:
         condition: service_started
-        
+
   movies:
     build:
       context: ./movies
       secrets:
         - GITHUB_TOKEN
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
     hostname: movies
     ports:
       - "9005:8080" # HTTP Movies Service
@@ -201,24 +241,24 @@ services:
     environment:
       # Mode
       MODE: ${MOVIES_MODE}
-      
+
       # Server configuration
       AUTH_SERVICE_ADDRESS: http://auth:50051
-      
+
       # Postgres Connection
       POSTGRES_DSN: postgres://${POSTGRES_MOVIES_DB_USER}:${POSTGRES_MOVIES_DB_PASSWORD_ENCODED}@postgres:5432/${POSTGRES_MOVIES_DB_NAME}?sslmode=disable
       POSTGRES_MAX_IDLE_CONNECTIONS: ${MOVIES_POSTGRES_MAX_IDLE_CONNECTIONS}
       POSTGRES_MAX_OPEN_CONNECTIONS: ${MOVIES_POSTGRES_MAX_OPEN_CONNECTIONS}
-      
+
       # Redis configuration
       REDIS_ADDRESS: redis:6379
       REDIS_USERNAME: ${REDIS_MOVIES_USER}
       REDIS_PASSWORD: ${REDIS_MOVIES_PASSWORD}
       REDIS_DB: ${REDIS_TOKENS_DB}
-      
+
       # TMDB API key
       TMDB_API_KEY: ${MOVIES_TMDB_API_KEY}
-      
+
       # TMDB Image sizes
       TMDB_CAST_MEMBER_PROFILE_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_CAST_MEMBER_PROFILE_IMAGE_WIDTH_SIZE}
       TMDB_CREW_MEMBER_PROFILE_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_CREW_MEMBER_PROFILE_IMAGE_WIDTH_SIZE}
@@ -242,12 +282,22 @@ services:
   postgres:
     image: postgres:latest
     hostname: postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
       - ./postgres/initdb.d:/docker-entrypoint-initdb.d:ro
       - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - app-network
     environment:
       # Superuser
       POSTGRES_USER: ${POSTGRES_SUPERUSER_NAME}
@@ -277,12 +327,18 @@ services:
       timeout: 5s
       retries: 20
       start_period: 120s # Allow time for DB and users to be created
-    networks:
-      - app-network
 
   redis:
     image: redis:latest
     hostname: redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     ports:
       - "6379:6379"
     volumes:
@@ -329,6 +385,14 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     hostname: rabbitmq
     ports:
       - "5672:5672"   # AMQP
@@ -359,7 +423,7 @@ services:
 
       # Exchanges
       RABBITMQ_MAILS_EXCHANGE_NAME: ${RABBITMQ_MAILS_EXCHANGE_NAME}
-      
+
       # Mails queues
       RABBITMQ_MAILS_QUEUES: ${RABBITMQ_MAILS_QUEUES}
     entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
