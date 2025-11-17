@@ -288,7 +288,7 @@ services:
 
   # Postgres Database (private, port 5432 not exposed)
   postgres:
-    image: postgres:latest
+    image: docker.io/library/postgres:latest
     hostname: postgres
     restart: unless-stopped
     deploy:
@@ -338,7 +338,7 @@ services:
 
   # Redis Cache (private, port 6379 not exposed)
   redis:
-    image: redis:latest
+    image: docker.io/library/redis:latest
     hostname: redis
     restart: unless-stopped
     deploy:
@@ -394,7 +394,7 @@ services:
 
   # RabbitMQ Message Broker (private, ports 6721 and 15672 not exposed)
   rabbitmq:
-    image: rabbitmq:3-management
+    image: docker.io/library/rabbitmq:3-management
     hostname: rabbitmq
     restart: unless-stopped
     deploy:
@@ -447,7 +447,7 @@ services:
 
   # Prometheus (private, port 9090 not exposed)
   prometheus:
-    image: prom/prometheus:latest
+    image: docker.io/prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
     volumes:
@@ -467,7 +467,7 @@ services:
 
   # Node Exporter (private, port 9100 not exposed)
   node-exporter:
-    image: prom/node-exporter:latest
+    image: docker.io/prom/node-exporter:latest
     container_name: node-exporter
     restart: unless-stopped
     volumes:
@@ -495,14 +495,14 @@ services:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
+      - /var/lib/containers:/var/lib/containers:ro
       - /dev/disk:/dev/disk:ro
     networks:
       - monitoring
 
   # Loki (private, port 3100 not exposed)
   loki:
-    image: grafana/loki:latest
+    image: docker.io/grafana/loki:latest
     container_name: loki
     restart: unless-stopped
     volumes:
@@ -514,13 +514,13 @@ services:
 
   # Promtail (private, port 9080 not exposed)
   promtail:
-    image: grafana/promtail:latest
+    image: docker.io/grafana/promtail:latest
     container_name: promtail
     restart: unless-stopped
     volumes:
       - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
       - /var/log:/var/log:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/lib/containers/storage/overlay-containers:/var/lib/containers:ro
     command: -config.file=/etc/promtail/promtail-config.yml
     networks:
       - monitoring
@@ -529,7 +529,7 @@ services:
 
   # Grafana (public) - grafana.ralvarez.app
   grafana:
-    image: grafana/grafana:latest
+    image: docker.io/grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
     volumes:
