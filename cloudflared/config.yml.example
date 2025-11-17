@@ -31,4 +31,6 @@ ingress:
       noTLSVerify: true
       readTimeout: 3600s
       writeTimeout: 3600s
+  - hostname: grafana.example.org
+    service: http://localhost:3000
   - service: http_status:404

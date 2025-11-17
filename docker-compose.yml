@@ -1,7 +1,12 @@
 services:
+  # Nginx Reverse Proxy for API (public) - api.ralvarez.app
   api-ralvarez-app:
     build:
       context: ./api.ralvarez.app
+    hostname: api-ralvarez-app
+    ports:
+      - "9000:80" # Nginx HTTP
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -10,15 +15,17 @@ services:
         reservations:
           cpus: '0.1'
           memory: 128M
-    hostname: api-ralvarez-app
-    ports:
-      - "9000:80" # Nginx HTTP
+    networks:
+      - monitoring
 
+  # Internal Mailer Service (private, ports 9100 and 9101 not exposed)
   internal-mailer:
     build:
       context: ./internal-mailer
       secrets:
         - GITHUB_TOKEN
+    hostname: internal-mailer
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -27,10 +34,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: 256M
-    hostname: internal-mailer
-    ports:
-      - "9100:8080" # HTTP Internal Mailer Service
-      - "9101:50051" # gRPC Internal Mailer Service
     environment:
       # General Configuration
       MODE: ${INTERNAL_MAILER_MODE}
@@ -67,18 +70,24 @@ services:
       RABBITMQ_RESET_PASSWORD_EMAILS_ROUTING_KEY: ${RABBITMQ_RESET_PASSWORD_EMAILS_ROUTING_KEY}
       RABBITMQ_VERIFICATION_EMAILS_ROUTING_KEY: ${RABBITMQ_VERIFICATION_EMAILS_ROUTING_KEY}
       RABBITMQ_2FA_CODE_EMAILS_ROUTING_KEY: ${RABBITMQ_2FA_CODE_EMAILS_ROUTING_KEY}
-    restart: on-failure
     networks:
       - app-network
+      - monitoring
     depends_on:
       rabbitmq:
         condition: service_healthy
 
+  # Auth Service (public and private, ports 8081 and 50052 not exposed) - auth.ralvarez.app and auth.ralvarez.dev
   auth:
     build:
       context: ./auth
       secrets:
         - GITHUB_TOKEN
+    hostname: auth
+    ports:
+      - "9001:8080" # HTTP Auth Service
+      - "9002:50051" # gRPC Auth Service
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -87,12 +96,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: 256M
-    hostname: auth
-    ports:
-      - "9001:8080" # HTTP Auth Service
-      - "9102:8081" # HTTP Internal Auth Service
-      - "9002:50051" # gRPC Auth Service
-      - "9103:50052" # gRPC Internal Auth Service
     environment:
       # Mode
       MODE: ${AUTH_MODE}
@@ -159,12 +162,12 @@ services:
       MINIMUM_PASSWORD_CAPS_COUNT: ${AUTH_MINIMUM_PASSWORD_CAPS_COUNT}
       MAXIMUM_FAILED_ATTEMPTS_COUNT: ${AUTH_MAXIMUM_FAILED_ATTEMPTS_COUNT}
       MAXIMUM_FAILED_ATTEMPTS_PERIOD: ${AUTH_MAXIMUM_FAILED_ATTEMPTS_PERIOD}
-    restart: on-failure
     volumes:
       - ./jwt/keys/private_key.pem:/app/config/private_key.pem:ro
       - ./jwt/keys/public_key.pem:/app/config/public_key.pem:ro
     networks:
       - app-network
+      - monitoring
     depends_on:
       postgres:
         condition: service_healthy
@@ -173,11 +176,17 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # User Service (public) - user.ralvarez.app and user.ralvarez.dev
   user:
     build:
       context: ./user
       secrets:
         - GITHUB_TOKEN
+    hostname: user
+    ports:
+      - "9003:8080" # HTTP User Service
+      - "9004:50051" # gRPC User Service
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -186,10 +195,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: 256M
-    hostname: user
-    ports:
-      - "9003:8080" # HTTP User Service
-      - "9004:50051" # gRPC User Service
     environment:
       # Mode
       MODE: ${USER_MODE}
@@ -208,11 +213,11 @@ services:
       REDIS_USERNAME: ${REDIS_USER_USER}
       REDIS_PASSWORD: ${REDIS_USER_PASSWORD}
       REDIS_DB: ${REDIS_TOKENS_DB}
-    restart: on-failure
     volumes:
       - ./jwt/keys/public_key.pem:/app/config/public_key.pem:ro
     networks:
       - app-network
+      - monitoring
     depends_on:
       postgres:
         condition: service_healthy
@@ -221,11 +226,17 @@ services:
       auth:
         condition: service_started
 
+  # Movies Service (public) - movies.ralvarez.app and movies.ralvarez.dev
   movies:
     build:
       context: ./movies
       secrets:
         - GITHUB_TOKEN
+    hostname: movies
+    ports:
+      - "9005:8080" # HTTP Movies Service
+      - "9006:50051" # gRPC Movies Service
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -234,10 +245,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: 256M
-    hostname: movies
-    ports:
-      - "9005:8080" # HTTP Movies Service
-      - "9006:50051" # gRPC Movies Service
     environment:
       # Mode
       MODE: ${MOVIES_MODE}
@@ -266,11 +273,11 @@ services:
       TMDB_PRODUCTION_COMPANY_LOGO_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_PRODUCTION_COMPANY_LOGO_IMAGE_WIDTH_SIZE}
       TMDB_MOVIE_DETAILS_POSTER_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_MOVIE_DETAILS_POSTER_IMAGE_WIDTH_SIZE}
       TMDB_AVATAR_IMAGE_WIDTH_SIZE: ${MOVIES_TMDB_AVATAR_IMAGE_WIDTH_SIZE}
-    restart: on-failure
     volumes:
       - ./jwt/keys/public_key.pem:/app/config/public_key.pem:ro
     networks:
       - app-network
+      - monitoring
     depends_on:
       redis:
         condition: service_healthy
@@ -279,9 +286,11 @@ services:
       auth:
         condition: service_started
 
+  # Postgres Database (private, port 5432 not exposed)
   postgres:
     image: postgres:latest
     hostname: postgres
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -290,14 +299,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql
-      - ./postgres/initdb.d:/docker-entrypoint-initdb.d:ro
-      - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-    networks:
-      - app-network
     environment:
       # Superuser
       POSTGRES_USER: ${POSTGRES_SUPERUSER_NAME}
@@ -317,6 +318,13 @@ services:
       POSTGRES_AUTH_DB_PASSWORD: ${POSTGRES_AUTH_DB_PASSWORD}
       POSTGRES_USER_DB_PASSWORD: ${POSTGRES_USER_DB_PASSWORD}
       POSTGRES_MOVIES_DB_PASSWORD: ${POSTGRES_MOVIES_DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./postgres/initdb.d:/docker-entrypoint-initdb.d:ro
+      - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - app-network
+      - monitoring
     healthcheck:
       test:
         [
@@ -328,9 +336,11 @@ services:
       retries: 20
       start_period: 120s # Allow time for DB and users to be created
 
+  # Redis Cache (private, port 6379 not exposed)
   redis:
     image: redis:latest
     hostname: redis
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -339,13 +349,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-      - ./redis/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
-      - ./redis/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
-      - ./redis/initdb.d:/docker-entrypoint-initdb.d:ro
     environment:
       # Root Password
       REDIS_DEFAULT_PASSWORD: ${REDIS_DEFAULT_PASSWORD}
@@ -362,6 +365,11 @@ services:
       REDIS_AUTH_PASSWORD: ${REDIS_AUTH_PASSWORD}
       REDIS_USER_PASSWORD: ${REDIS_USER_PASSWORD}
       REDIS_MOVIES_PASSWORD: ${REDIS_MOVIES_PASSWORD}
+    volumes:
+      - redis-data:/data
+      - ./redis/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+      - ./redis/initdb.d:/docker-entrypoint-initdb.d:ro
     command:
       [
         "redis-server",
@@ -382,9 +390,13 @@ services:
       start_period: 60s # Allow time for Redis to initialize
     networks:
       - app-network
+      - monitoring
 
+  # RabbitMQ Message Broker (private, ports 6721 and 15672 not exposed)
   rabbitmq:
     image: rabbitmq:3-management
+    hostname: rabbitmq
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -393,14 +405,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
-    hostname: rabbitmq
-    ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-      - ./rabbitmq/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
-      - ./rabbitmq/initdb.d:/docker-entrypoint-initdb.d:ro
     environment:
       # Logs
       RABBITMQ_LOGS: "/var/log/rabbitmq/rabbitmq.log"
@@ -426,6 +430,10 @@ services:
 
       # Mails queues
       RABBITMQ_MAILS_QUEUES: ${RABBITMQ_MAILS_QUEUES}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./rabbitmq/entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+      - ./rabbitmq/initdb.d:/docker-entrypoint-initdb.d:ro
     entrypoint: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
     healthcheck:
       test: rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity
@@ -435,6 +443,110 @@ services:
       start_period: 120s # Allow time for RabbitMQ to initialize
     networks:
       - app-network
+      - monitoring
+
+  # Prometheus (private, port 9090 not exposed)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command: [
+      '--config.file=/etc/prometheus/prometheus.yml',
+      '--storage.tsdb.path=/prometheus',
+      '--storage.tsdb.retention.time=30d',
+      '--web.console.libraries=/etc/prometheus/console_libraries',
+      '--web.console.templates=/etc/prometheus/consoles',
+      '--web.enable-lifecycle',
+      ]
+    networks:
+      - monitoring
+
+  # Node Exporter (private, port 9100 not exposed)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command: [
+      '--path.procfs=/host/proc',
+      '--path.sysfs=/host/sys',
+      '--path.rootfs=/rootfs',
+      '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)',
+      ]
+    networks:
+      - monitoring
+
+  # cAdvisor (private, port 8080 not exposed)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    networks:
+      - monitoring
+
+  # Loki (private, port 3100 not exposed)
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - monitoring
+
+  # Promtail (private, port 9080 not exposed)
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    restart: unless-stopped
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/promtail-config.yml
+    networks:
+      - monitoring
+    depends_on:
+      - loki
+
+  # Grafana (public) - grafana.ralvarez.app
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_SERVER_ROOT_URL: ${GRAFANA_SERVER_ROOT_URL}
+      GF_USERS_ALLOW_SIGN_UP: ${GRAFANA_USERS_ALLOW_SIGN_UP}
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+      - loki
 
 secrets:
   GITHUB_TOKEN:
@@ -444,7 +556,12 @@ volumes:
   postgres-data:
   redis-data:
   rabbitmq-data:
+  grafana-data:
+  prometheus-data:
+  loki-data:
 
 networks:
   app-network:
+    driver: bridge
+  monitoring:
     driver: bridge
