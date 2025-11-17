@@ -19,10 +19,6 @@ services:
       # General Configuration
       MODE: ${INTERNAL_MAILER_MODE}
       
-      # Server Configuration
-      HTTP_PORT: 8080
-      GRPC_PORT: 50051
-
       # MailerSend Configuration
       MAILERSEND_DOMAIN: ${INTERNAL_MAILER_MAILERSEND_DOMAIN}
       MAILERSEND_NAME: ${INTERNAL_MAILER_MAILERSEND_NAME}
@@ -84,10 +80,6 @@ services:
       
       # Server configuration
       DOMAIN: ${DOMAIN}
-      HTTP_PORT: 8080
-      HTTP_INTERNAL_PORT: 8081
-      GRPC_PORT: 50051
-      GRPC_INTERNAL_PORT: 50052
       
       # Web App configuration
       VERIFY_EMAIL_URL: ${AUTH_VERIFY_EMAIL_URL}
@@ -171,8 +163,6 @@ services:
       MODE: ${USER_MODE}
       
       # Server configuration
-      HTTP_PORT: 8080
-      GRPC_PORT: 50051
       AUTH_SERVICE_ADDRESS: http://auth:50051
       INTERNAL_AUTH_SERVICE_ADDRESS: http://auth:50052
       
@@ -213,8 +203,6 @@ services:
       MODE: ${MOVIES_MODE}
       
       # Server configuration
-      HTTP_PORT: 8080
-      GRPC_PORT: 50051
       AUTH_SERVICE_ADDRESS: http://auth:50051
       
       # Postgres Connection
