@@ -453,7 +453,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml
-      - prometheus_data:/prometheus
+      - prometheus-data:/prometheus
     command: [
       '--config.file=/etc/prometheus/prometheus.yml',
       '--storage.tsdb.path=/prometheus',
@@ -507,7 +507,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./loki/loki-config.yml:/etc/loki/loki-config.yml
-      - loki_data:/loki
+      - loki-data:/loki
     command: -config.file=/etc/loki/loki-config.yml
     networks:
       - monitoring
@@ -533,7 +533,7 @@ services:
     container_name: grafana
     restart: unless-stopped
     volumes:
-      - grafana_data:/var/lib/grafana
+      - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
@@ -553,12 +553,12 @@ secrets:
     file: ./.github_token
 
 volumes:
-  postgres-data:
-  redis-data:
-  rabbitmq-data:
-  grafana-data:
-  prometheus-data:
-  loki-data:
+  postgres-data: {}
+  redis-data: {}
+  rabbitmq-data: {}
+  grafana-data: {}
+  prometheus-data: {}
+  loki-data: {}
 
 networks:
   app-network:
