@@ -507,6 +507,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./loki/loki-config.yml:/etc/loki/loki-config.yml
+      - loki-delete-requests:/loki/delete-requests
       - loki-data:/loki
     command: -config.file=/etc/loki/loki-config.yml
     networks:
@@ -557,6 +558,7 @@ volumes:
   rabbitmq-data: {}
   grafana-data: {}
   prometheus-data: {}
+  loki-delete-requests: {}
   loki-data: {}
 
 networks:
