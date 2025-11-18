@@ -19,17 +19,12 @@ scrape_configs:
           host: raspberry-pi-5
           __path__: /var/log/*.log
 
-  # Podman container logs from journald
-  - job_name: journal
-    journal:
-      json: false
-      max_age: 12h
-      path: /var/log/journal
-      labels:
-        job: systemd-journal
-        host: raspberry-pi-5
-    relabel_configs:
-      - source_labels: ['__journal__systemd_unit']
-        target_label: 'unit'
-      - source_labels: ['__journal_container_name']
-        target_label: 'container_name'
+  # Podman container logs (using podman's log files)
+  - job_name: podman
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: podman
+          host: raspberry-pi-5
+          __path__: /run/user/*/containers/overlay-containers/*/userdata/ctr.log
