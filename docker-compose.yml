@@ -551,6 +551,8 @@ services:
     image: docker.io/grafana/promtail:latest
     hostname: promtail
     restart: unless-stopped
+    user: "0:0"  # Run as root to access journal
+    privileged: true  # Needed for journal access
     deploy:
       resources:
         limits:
