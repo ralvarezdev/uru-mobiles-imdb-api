@@ -10,10 +10,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 256M
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 128M
     networks:
       - monitoring
@@ -29,10 +29,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 1G
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 256M
     environment:
       # General Configuration
@@ -91,10 +91,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'
+          cpus: "0.75"
           memory: 1.5G
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 256M
     environment:
       # Mode
@@ -190,10 +190,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 1G
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 256M
     environment:
       # Mode
@@ -240,10 +240,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 1G
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 256M
     environment:
       # Mode
@@ -294,10 +294,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 2G
         reservations:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 512M
     environment:
       # Superuser
@@ -344,10 +344,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'
+          cpus: "0.75"
           memory: 1G
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 256M
     environment:
       # Root Password
@@ -400,10 +400,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'
+          cpus: "0.75"
           memory: 1G
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 256M
     environment:
       # Logs
@@ -450,17 +450,26 @@ services:
     image: docker.io/prom/prometheus:latest
     hostname: prometheus
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 512M
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml
       - prometheus-data:/prometheus
-    command: [
-      '--config.file=/etc/prometheus/prometheus.yml',
-      '--storage.tsdb.path=/prometheus',
-      '--storage.tsdb.retention.time=30d',
-      '--web.console.libraries=/etc/prometheus/console_libraries',
-      '--web.console.templates=/etc/prometheus/consoles',
-      '--web.enable-lifecycle',
+    command:
+      [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus",
+        "--storage.tsdb.retention.time=30d",
+        "--web.console.libraries=/etc/prometheus/console_libraries",
+        "--web.console.templates=/etc/prometheus/consoles",
+        "--web.enable-lifecycle",
       ]
     networks:
       - monitoring
@@ -470,15 +479,24 @@ services:
     image: docker.io/prom/node-exporter:latest
     hostname: node-exporter
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
-    command: [
-      '--path.procfs=/host/proc',
-      '--path.sysfs=/host/sys',
-      '--path.rootfs=/rootfs',
-      '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)',
+    command:
+      [
+        "--path.procfs=/host/proc",
+        "--path.sysfs=/host/sys",
+        "--path.rootfs=/rootfs",
+        "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)",
       ]
     networks:
       - monitoring
@@ -489,6 +507,14 @@ services:
     hostname: cadvisor
     restart: unless-stopped
     privileged: true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
     devices:
       - /dev/kmsg:/dev/kmsg
     volumes:
@@ -505,6 +531,14 @@ services:
     image: docker.io/grafana/loki:latest
     hostname: loki
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 768M
+        reservations:
+          cpus: "0.25"
+          memory: 384M
     volumes:
       - ./loki/loki-config.yml:/etc/loki/loki-config.yml
       - loki-data:/loki
@@ -517,6 +551,14 @@ services:
     image: docker.io/grafana/promtail:latest
     hostname: promtail
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
     volumes:
       - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
       - /var/log:/var/log:ro
@@ -536,6 +578,14 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 768M
+        reservations:
+          cpus: "0.25"
+          memory: 384M
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
