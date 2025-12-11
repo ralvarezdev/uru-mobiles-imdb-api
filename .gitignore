@@ -34,17 +34,6 @@ go.work.sum
 # GitHub token
 .github_token
 
-# Zookeeper and Kafka configuration files
-# zookeeper/config/zookeeper_jaas.conf
-# kafka/config/kafka_jaas.conf
-
-# Client properties files
-# kafka/config/client.properties
-
-# KurrentDB certificates
-kurrentdb/certs/
-kurrentdb-setup/certs/
-
 # JWT keys directory
 jwt/keys/
 

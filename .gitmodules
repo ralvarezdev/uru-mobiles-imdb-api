@@ -14,3 +14,12 @@
 [submodule "movies"]
 	path = movies
 	url = https://github.com/ralvarezdev/connect-movies
+[submodule "sql-user"]
+	path = sql-user
+	url = https://github.com/ralvarezdev/sql-user
+[submodule "sql-auth"]
+	path = sql-auth
+	url = https://github.com/ralvarezdev/sql-auth
+[submodule "sql-movies"]
+	path = sql-movies
+	url = https://github.com/ralvarezdev/sql-movies
