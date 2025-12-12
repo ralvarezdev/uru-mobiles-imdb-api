@@ -7,25 +7,25 @@ ingress:
   - hostname: auth.example.org
     service: http://localhost:9001
   - hostname: auth2.example.org
-    service: http://localhost:9002
+    service: grpc://localhost:9001
     originRequest:
       http2Origin: true
       noTLSVerify: true
       readTimeout: 3600s
       writeTimeout: 3600s
   - hostname: user.example.org
-    service: http://localhost:9003
+    service: http://localhost:9002
   - hostname: user2.example.org
-    service: http://localhost:9004
+    service: grpc://localhost:9002
     originRequest:
       http2Origin: true
       noTLSVerify: true
       readTimeout: 3600s
       writeTimeout: 3600s
   - hostname: movies.example.org
-    service: http://localhost:9005
+    service: http://localhost:9003
   - hostname: movies2.example.org
-    service: http://localhost:9006
+    service: grpc://localhost:9003
     originRequest:
       http2Origin: true
       noTLSVerify: true
